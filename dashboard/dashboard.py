@@ -5,8 +5,10 @@ import matplotlib.pyplot as plt
 from babel.numbers import format_currency
 sns.set(style='dark')
 
+st.write("Current Working Directory:", os.getcwd())
+
 # Load dataset day_df dan hour_df
-day_df = pd.read_csv('/dashboard/all_data.csv')
+day_df = pd.read_csv('dashboard/all_data.csv')
 
 
 
