@@ -6,7 +6,7 @@ from babel.numbers import format_currency
 sns.set(style='dark')
 
 # Load dataset day_df dan hour_df
-day_df = pd.read_csv('all_data.csv')
+day_df = pd.read_csv('/dashboard/all_data.csv')
 
 
 
