@@ -3,9 +3,8 @@ import streamlit as st
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-import scikit-learn 
-from sklearn.cluster import KMeans
-from sklearn.preprocessing import StandardScaler
+from sklearn.cluster import KMeans  # Perbaikan impor sklearn
+from sklearn.preprocessing import StandardScaler  # Perbaikan impor sklearn
 
 sns.set(style='dark')
 
@@ -103,4 +102,3 @@ if option == 'Clustering Analysis':
     for i in range(num_clusters):
         st.write(f"Cluster {i+1}:")
         st.write(day_df[day_df['cluster'] == i].describe().T)
-
