@@ -86,19 +86,53 @@ if option == 'Clustering Analysis':
     kmeans = KMeans(n_clusters=num_clusters, random_state=42)
     day_df['cluster'] = kmeans.fit_predict(clustering_data_scaled)
 
-    # Display cluster centroids
-    st.subheader(f"Cluster Centers (n={num_clusters})")
-    centroids = pd.DataFrame(scaler.inverse_transform(kmeans.cluster_centers_), columns=clustering_data.columns)
-    st.write(centroids)
+# 1. Pengaruh Season terhadap Penyewaan Sepeda
+# Filter relevant columns for clustering
+season_data = day_df[['season', 'cnt', 'temp', 'hum']]
 
-    # Visualize clusters
-    fig, ax = plt.subplots()
-    sns.scatterplot(x=day_df['temp'], y=day_df['cnt'], hue=day_df['cluster'], palette='Set2', ax=ax)
-    ax.set_title('Clustering of Rentals Based on Temperature')
-    st.pyplot(fig)
+# Normalize the data
+scaler = StandardScaler()
+season_scaled = scaler.fit_transform(season_data)
 
-    # Cluster Insights
-    st.subheader("Cluster Insights")
-    for i in range(num_clusters):
-        st.write(f"Cluster {i+1}:")
-        st.write(day_df[day_df['cluster'] == i].describe().T)
+# Apply KMeans clustering
+kmeans_season = KMeans(n_clusters=4, random_state=42)  # Using 4 clusters for seasons
+season_data['cluster'] = kmeans_season.fit_predict(season_scaled)
+
+# Visualize the clustering result
+plt.figure(figsize=(10, 6))
+sns.scatterplot(data=season_data, x='temp', y='cnt', hue='cluster', palette='viridis')
+plt.title('Clustering Penyewaan Sepeda Berdasarkan Musim')
+plt.xlabel('Suhu (Normalized)')
+plt.ylabel('Jumlah Penyewaan')
+plt.legend(title='Cluster')
+plt.show()
+
+# 2. Perilaku Penyewa Sepeda Casual dan Registered
+# Filter relevant columns for clustering
+behavior_data = day_df[['casual', 'registered', 'cnt', 'temp', 'hum']]
+
+# Normalize the data
+behavior_scaled = scaler.fit_transform(behavior_data)
+
+# Apply KMeans clustering
+kmeans_behavior = KMeans(n_clusters=3, random_state=42)  # Using 3 clusters for behavior
+behavior_data['cluster'] = kmeans_behavior.fit_predict(behavior_scaled)
+
+# Visualize the clustering result
+plt.figure(figsize=(10, 6))
+sns.scatterplot(data=behavior_data, x='casual', y='registered', hue='cluster', palette='coolwarm')
+plt.title('Clustering Perilaku Penyewa Sepeda')
+plt.xlabel('Jumlah Penyewa Kasual')
+plt.ylabel('Jumlah Penyewa Terdaftar')
+plt.legend(title='Cluster')
+plt.show()
+
+# Streamlit Application
+st.title("Dashboard Penyewaan Sepeda")
+
+# Display clustering visuals in Streamlit
+st.header("Clustering Penyewaan Sepeda Berdasarkan Musim")
+st.pyplot(plt)
+
+st.header("Clustering Perilaku Penyewa Sepeda")
+st.pyplot(plt)
