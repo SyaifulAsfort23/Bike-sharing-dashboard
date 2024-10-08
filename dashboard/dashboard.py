@@ -99,12 +99,12 @@ with tab1:
     
     # Visualisasi perilaku pengguna casual dan registered
     st.header("Perilaku Pengguna Casual vs Registered")
-    user_behavior = all_data.head(50)[['casual', 'registered', 'dteday']].set_index('dteday')
+    user_behavior = all_data.head(50)[['casual', 'registered', 'months_order']].set_index('months_order')
     
     fig, ax = plt.subplots()
     ax.plot(user_behavior.index, user_behavior['casual'], label='Casual Users', color='orange')
     ax.plot(user_behavior.index, user_behavior['registered'], label='Registered Users', color='blue')
-    ax.set_xlabel('Date')
+    ax.set_xlabel('Month')
     ax.set_ylabel('User Count')
     ax.set_title('Casual vs Registered Users Over Time')
     ax.legend()
