@@ -77,6 +77,39 @@ with tab1:
     
     # Show plot in Streamlit
     st.pyplot(fig)
+    st.header("Dataset Preview")
+    st.dataframe(all_data.head(10))  # Menampilkan 10 baris pertama dari dataset
+
+    # Convert 'season' and 'dteday' for better readability
+    season_map = {1: 'Spring', 2: 'Summer', 3: 'Fall', 4: 'Winter'}
+    all_data['season'] = all_data['season'].map(season_map)
+    all_data['dteday'] = pd.to_datetime(all_data['dteday'])
+    
+    # Visualisasi pengaruh musim terhadap penyewaan sepeda
+    st.header("Pengaruh Musim Terhadap Penyewaan Sepeda")
+    season_rentals = all_data.groupby('season')['cnt'].sum().reset_index()
+    
+    fig, ax = plt.subplots()
+    ax.bar(season_rentals['season'], season_rentals['cnt'], color='skyblue')
+    ax.set_xlabel('Season')
+    ax.set_ylabel('Total Rentals')
+    ax.set_title('Total Rentals by Season')
+    
+    st.pyplot(fig)
+    
+    # Visualisasi perilaku pengguna casual dan registered
+    st.header("Perilaku Pengguna Casual vs Registered")
+    user_behavior = all_data[['casual', 'registered', 'dteday']].set_index('dteday')
+    
+    fig, ax = plt.subplots()
+    ax.plot(user_behavior.index, user_behavior['casual'], label='Casual Users', color='orange')
+    ax.plot(user_behavior.index, user_behavior['registered'], label='Registered Users', color='blue')
+    ax.set_xlabel('Date')
+    ax.set_ylabel('User Count')
+    ax.set_title('Casual vs Registered Users Over Time')
+    ax.legend()
+    
+    st.pyplot(fig)
     
 with tab2:
     
