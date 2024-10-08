@@ -85,31 +85,41 @@ with tab1:
     all_data['season'] = all_data['season'].map(season_map)
     all_data['dteday'] = pd.to_datetime(all_data['dteday'])
     
-    # Visualisasi pengaruh musim terhadap penyewaan sepeda
-    st.header("Pengaruh Musim Terhadap Penyewaan Sepeda")
-    season_rentals = all_data.groupby('season')['cnt'].sum().reset_index()
+   # Visualisasi perilaku pengguna casual dan registered berdasarkan bulan
+    st.header("Perilaku Pengguna Casual vs Registered Berdasarkan Bulan")
     
-    fig, ax = plt.subplots()
-    ax.bar(season_rentals['season'], season_rentals['cnt'], color='skyblue')
-    ax.set_xlabel('Season')
-    ax.set_ylabel('Total Rentals')
-    ax.set_title('Total Rentals by Season')
+    # Filter data untuk tahun 2011 dan 2012
+    data_2011 = all_data[all_data['year'] == 2011]
+    data_2012 = all_data[all_data['year'] == 2012]
     
-    st.pyplot(fig)
+    # Group by month for both years
+    monthly_2011 = data_2011.groupby('month').agg({'casual': 'sum', 'registered': 'sum'}).reindex(months_order)
+    monthly_2012 = data_2012.groupby('month').agg({'casual': 'sum', 'registered': 'sum'}).reindex(months_order)
     
-    # Visualisasi perilaku pengguna casual dan registered
-    st.header("Perilaku Pengguna Casual vs Registered")
-    user_behavior = all_data.head(50)[['casual', 'registered', 'months_order']].set_index('months_order')
-    
-    fig, ax = plt.subplots()
-    ax.plot(user_behavior.index, user_behavior['casual'], label='Casual Users', color='orange')
-    ax.plot(user_behavior.index, user_behavior['registered'], label='Registered Users', color='blue')
-    ax.set_xlabel('Month')
-    ax.set_ylabel('User Count')
-    ax.set_title('Casual vs Registered Users Over Time')
+    # Plot for 2011
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.plot(monthly_2011.index, monthly_2011['casual'], label='Casual Users', color='orange', marker='o')
+    ax.plot(monthly_2011.index, monthly_2011['registered'], label='Registered Users', color='blue', marker='o')
+    ax.set_xlabel('Bulan')
+    ax.set_ylabel('Jumlah Pengguna')
+    ax.set_title('Perilaku Pengguna Casual vs Registered di Tahun 2011')
+    ax.set_xticklabels(months_order, rotation=45)
     ax.legend()
-    
+    ax.grid()
     st.pyplot(fig)
+    
+    # Plot for 2012
+    fig, ax = plt.subplots(figsize=(10, 6))
+    ax.plot(monthly_2012.index, monthly_2012['casual'], label='Casual Users', color='orange', marker='o')
+    ax.plot(monthly_2012.index, monthly_2012['registered'], label='Registered Users', color='blue', marker='o')
+    ax.set_xlabel('Bulan')
+    ax.set_ylabel('Jumlah Pengguna')
+    ax.set_title('Perilaku Pengguna Casual vs Registered di Tahun 2012')
+    ax.set_xticklabels(months_order, rotation=45)
+    ax.legend()
+    ax.grid()
+    st.pyplot(fig)
+    
     
 with tab2:
     
