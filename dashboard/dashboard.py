@@ -104,7 +104,7 @@ with tab1:
     fig, ax = plt.subplots()
     ax.plot(user_behavior.index, user_behavior['casual'], label='Casual Users', color='orange')
     ax.plot(user_behavior.index, user_behavior['registered'], label='Registered Users', color='blue')
-    ax.set_xlabel('Date')
+    ax.set_xlabel('Date', rotation=45)
     ax.set_ylabel('User Count')
     ax.set_title('Casual vs Registered Users Over Time')
     ax.legend()
