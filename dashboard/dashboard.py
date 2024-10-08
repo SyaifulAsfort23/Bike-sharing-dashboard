@@ -7,7 +7,7 @@ from sklearn.cluster import KMeans
 from sklearn.preprocessing import StandardScaler
 
 # Load data
-all_data = pd.read_csv("dahsboard/all_data.csv")
+all_data = pd.read_csv("dashboard/all_data.csv")
 
 # Fungsi untuk membuat plot
 def create_plot(data, x, y, hue, title):
