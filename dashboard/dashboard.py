@@ -83,7 +83,7 @@ with tab2:
     plot_type = st.selectbox("Choose", ["Weekday & Musim", "Workingday & Musim", "Holiday & Musim"])
     
     if plot_type == "Weekday & Musim":
-        st.image("dashboard_pitc/musimdanweekday.png", caption="Weekday dan Musim")    
+        st.image("dashboard/dashboard_pitc/musimdanweekday.png", caption="Weekday dan Musim")    
         long_text ='''
     1. Fluktuasi Musiman: Terdapat pola musiman yang jelas dalam jumlah penyewa. Musim Fall (Gugur) umumnya memiliki jumlah penyewa tertinggi, diikuti oleh Summer (Musim Panas). Musim Spring (Musim Semi) dan Winter (Musim Dingin) cenderung memiliki jumlah penyewa yang lebih rendah. Ini menunjukkan bahwa faktor cuaca dan aktivitas musiman sangat mempengaruhi minat masyarakat untuk menyewa sepeda.
     2. Pola Harian:
@@ -97,7 +97,7 @@ with tab2:
             st.markdown(long_text)
     
     elif plot_type == "Workingday & Musim":
-        st.image("dashboard_pitc/musimdanworkingday.png", caption="Workingday dan Musim")
+        st.image("dashboard/dashboard_pitc/musimdanworkingday.png", caption="Workingday dan Musim")
         long_text ='''
     1. Dominasi Hari Kerja: Secara umum, jumlah penyewa pada hari kerja lebih tinggi dibandingkan akhir pekan di semua musim. Ini mengindikasikan bahwa banyak orang menggunakan sepeda sebagai alat transportasi sehari-hari untuk bekerja atau aktivitas lainnya.
     
@@ -110,7 +110,7 @@ with tab2:
         
         
     elif plot_type == "Holiday & Musim":
-        st.image("dashboard_pitc/musimdanholiday.png", caption="Holidaydan Musim")
+        st.image("dashboard/dashboard_pitc/musimdanholiday.png", caption="Holidaydan Musim")
         long_text ='''1. Musim Fall (Gugur) merupakan musim dengan jumlah penyewa tertinggi baik pada hari libur maupun bukan libur. Ini mengindikasikan bahwa cuaca atau aktivitas pada musim gugur mungkin lebih mendukung aktivitas bersepeda
         
 2. Jumlah penyewa secara umum lebih tinggi pada hari-hari yang bukan libur. Ini masuk akal karena pada hari kerja, orang-orang mungkin lebih sering menggunakan sepeda untuk beraktivitas sehari-hari seperti bekerja atau bersekolah.        
@@ -132,7 +132,7 @@ with tab3:
 ])
 
     if plot_type == "Penyewa Casual by Weekday & Musim":
-        st.image("dashboard_pitc/casualbyweekdaynseason.png", caption="Penyewa Casual by Weekday & Musim")
+        st.image("dashboard/dashboard_pitc/casualbyweekdaynseason.png", caption="Penyewa Casual by Weekday & Musim")
         long_text ='''
     1. Fluktuasi Harian: Jumlah penyewa kasual cenderung lebih tinggi pada akhir pekan (Sabtu dan Minggu) dibandingkan hari kerja. Ini menunjukkan bahwa banyak orang menggunakan sepeda kasual untuk rekreasi atau aktivitas di luar ruangan pada akhir pekan.
     2. Pola Musiman: Terdapat perbedaan jumlah penyewa kasual di setiap musim, meskipun tidak sejelas pada visualisasi sebelumnya. Namun, secara umum, musim-musim tertentu mungkin memiliki preferensi yang berbeda terkait dengan penggunaan sepeda kasual.
@@ -143,7 +143,7 @@ with tab3:
             st.markdown(long_text)
 
     elif plot_type == "Penyewa Casual by Workingday & Musim":
-        st.image("dashboard_pitc/casualbyworkingdaynseason.png", caption="Penyewa Casual by Workingday & Musim")
+        st.image("dashboard/dashboard_pitc/casualbyworkingdaynseason.png", caption="Penyewa Casual by Workingday & Musim")
         long_text ='''
   1. Dominasi Hari Libur: Secara umum, jumlah penyewa kasual pada hari libur (non-working day) lebih tinggi dibandingkan hari kerja. Ini mengindikasikan bahwa banyak orang menggunakan sepeda kasual untuk rekreasi atau aktivitas di luar ruangan pada akhir pekan.
 
@@ -158,7 +158,7 @@ with tab3:
 
 
     elif plot_type == "Penyewa Casual by Holiday & Musim":
-        st.image("dashboard_pitc/casualbyholidaynseason.png", caption="Penyewa Casual by Holiday & Musim")
+        st.image("dashboard/dashboard_pitc/casualbyholidaynseason.png", caption="Penyewa Casual by Holiday & Musim")
         long_text ='''
    1.  Dominasi Hari Libur: Secara umum, jumlah penyewa kasual pada hari libur (Holiday) lebih tinggi dibandingkan hari kerja (No Holiday). Ini mengindikasikan bahwa banyak orang menggunakan sepeda kasual untuk rekreasi atau aktivitas di luar ruangan pada akhir pekan atau hari libur.
 
@@ -173,7 +173,7 @@ with tab3:
 
 
     elif plot_type == "Penyewa Registered by Weekday & Musim":
-        st.image("dashboard_pitc/registeredbyweekdaynseason.png", caption="Penyewa Registered by Weekday & Musim")
+        st.image("dashboard/dashboard_pitc/registeredbyweekdaynseason.png", caption="Penyewa Registered by Weekday & Musim")
         long_text ='''
    1. Fluktuasi Harian: Jumlah penyewa registered cenderung lebih tinggi pada akhir pekan (Sabtu dan Minggu) dibandingkan hari kerja. Ini mengindikasikan bahwa banyak pengguna terdaftar menggunakan sepeda untuk rekreasi atau aktivitas di luar ruangan pada akhir pekan.
     2. Pola Musiman: Terdapat perbedaan jumlah penyewa registered di setiap musim. Musim gugur (Fall) dan musim panas (Summer) umumnya memiliki jumlah penyewa registered yang lebih tinggi dibandingkan musim semi (Spring) dan musim dingin (Winter). Ini menunjukkan bahwa faktor cuaca dan aktivitas musiman sangat mempengaruhi minat masyarakat untuk menyewa sepeda.
@@ -186,7 +186,7 @@ with tab3:
 
 
     elif plot_type == "Penyewa Registered by Workingday & Musim":
-        st.image("dashboard_pitc/registeredbyworkingdaynseason.png", caption="Penyewa Registered by Workingday & Musim")
+        st.image("dashboard/dashboard_pitc/registeredbyworkingdaynseason.png", caption="Penyewa Registered by Workingday & Musim")
         long_text ='''
 
    1.  Dominasi Hari Libur: Secara umum, jumlah penyewa registered pada hari libur (non-working day) lebih tinggi dibandingkan hari kerja. Ini mengindikasikan bahwa banyak pengguna terdaftar menggunakan sepeda untuk rekreasi atau aktivitas di luar ruangan pada akhir pekan.
@@ -201,7 +201,7 @@ with tab3:
 
 
     elif plot_type == "Penyewa Registered by Holiday & Musim":
-        st.image("dashboard_pitc/registeredbyholidaynseason.png", caption="Penyewa Registered by Holiday & Musim")
+        st.image("dashboard/dashboard_pitc/registeredbyholidaynseason.png", caption="Penyewa Registered by Holiday & Musim")
         long_text ='''
     1. Dominasi Hari Libur: Secara umum, jumlah penyewa registered pada Kerja(No Holiday) jauh lebih tinggi dibandingkan di hari Libur (Holiday). Ini mengindikasikan bahwa banyak pengguna terdaftar menggunakan sepeda untuk rekreasi atau aktivitas di luar ruangan pada akhir pekan atau hari libur.
 
@@ -227,7 +227,7 @@ with tab4:
 ])
 
     if plot_type == "Cluster Penyewa by Musim":
-        st.image("dashboard_pitc/cluster_sewa_by_season.png")
+        st.image("dashboard/dashboard_pitc/cluster_sewa_by_season.png")
         long_text ='''
     
     1. Segmentasi Pasar:
@@ -260,7 +260,7 @@ with tab4:
             
             
     elif plot_type == "Cluster Perilaku Penyewa Workingday":
-        st.image("dashboard_pitc/cluster_perilaku_workingday.png")
+        st.image("dashboard/dashboard_pitc/cluster_perilaku_workingday.png")
         long_text ='''
     - Pola serupa dengan weekday, namun dengan jumlah penyewaan reguler yang lebih tinggi. Ini menunjukkan bahwa pada hari kerja, sebagian besar pengguna adalah pengguna reguler yang mungkin menggunakan sepeda untuk commuting.
 '''
