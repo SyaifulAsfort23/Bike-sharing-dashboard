@@ -24,7 +24,7 @@ def create_tab(tab_name, content):
 st.title("Dashboard Analisis Penyewaan Sepeda")
 
 # Tab untuk spesifikasi 1 dan 2
-tab1, tab2, tab3, tab4 = st.tabs(["Overview", "Pengaruh Musim Terhadap Penyewa ", "Perilaku Penyewa kasual dan terdaftar ", "Clustering"])
+tab1, tab2, tab3, tab4 = st.tabs(["Preview", "Pengaruh Musim Terhadap Penyewa ", "Perilaku Penyewa kasual dan terdaftar ", "Clustering"])
 
 with tab1:
     
