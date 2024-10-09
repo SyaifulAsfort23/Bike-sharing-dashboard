@@ -71,15 +71,16 @@ with col2:
     # Data penyewa casual dan registered
     user_behavior = daily_data[daily_data['yr'] == (year_option - 2011)].groupby('season')[['casual', 'registered']].mean().reset_index()
     
+    # Reshape data for Altair-friendly format
+    user_behavior = pd.melt(user_behavior, id_vars=['season'], value_vars=['casual', 'registered'], 
+                            var_name='User Type', value_name='Average Rentals')
+
     # Plotting data penyewa casual vs registered per musim
     chart = alt.Chart(user_behavior).mark_bar().encode(
         x=alt.X('season:O', title='Season'),
-        y=alt.Y('value:Q', title='Average Daily Rentals'),
-        color=alt.Color('variable:N', title='User Type'),
-        tooltip=['season', 'value', 'variable']
-    ).transform_fold(
-        ['casual', 'registered'],
-        as_=['variable', 'value']
+        y=alt.Y('Average Rentals:Q', title='Average Daily Rentals'),
+        color=alt.Color('User Type:N', title='User Type'),
+        tooltip=['season', 'Average Rentals', 'User Type']
     ).properties(
         title='Average Daily Rentals by Casual and Registered Users per Season'
     )
