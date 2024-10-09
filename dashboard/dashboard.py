@@ -1,330 +1,178 @@
 import streamlit as st
 import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
-import seaborn as sns
-from sklearn.cluster import KMeans
-from sklearn.preprocessing import StandardScaler
+import altair as alt
+
+DAY_PATH = 'dataset/day.csv'
+HOUR_PATH = 'dataset/hour.csv'
+
+st.set_page_config(
+    page_title='Bike Sharing Dashboard',
+    layout='wide'
+)
+
+@st.cache_data
+def load_data(file_path):
+    data = pd.read_csv(file_path)
+    return data
 
 # Load data
-all_data = pd.read_csv("dashboard/all_data.csv")
+daily_data = load_data(DAY_PATH)
+hourly_data = load_data(HOUR_PATH)
 
-# Fungsi untuk membuat plot
-def create_plot(data, x, y, hue, title):
-    sns.countplot(data=data, x=x, hue=hue)
-    plt.title(title)
-    st.pyplot()
+# Sidebar buttons to switch between views
+st.sidebar.title("Bike Sharing Dashboard")
 
-# Fungsi untuk membuat tab
-def create_tab(tab_name, content):
-    with st.tab(tab_name):
-        content
+# Fix season columns format
+daily_data['season'] = daily_data['season'].replace({1: 'Winter', 2: 'Spring', 3: 'Summer', 4: 'Fall'})
+hourly_data['season'] = hourly_data['season'].replace({1: 'Winter', 2: 'Spring', 3: 'Summer', 4: 'Fall'})
 
-# Bagian utama aplikasi
-st.title("Dashboard Analisis Penyewaan Sepeda")
+# Fix weather columns format
+daily_data['weathersit'] = daily_data['weathersit'].replace({1: 'Clear/Cloudy', 2: 'Mist', 3: 'Light Rain/Snow', 4: 'Heavy Rain/Snow'})
+hourly_data['weathersit'] = hourly_data['weathersit'].replace({1: 'Clear/Cloudy', 2: 'Mist', 3: 'Light Rain/Snow', 4: 'Heavy Rain/Snow'})
 
-# Tab untuk spesifikasi 1 dan 2
-tab1, tab2, tab3, tab4 = st.tabs(["Preview", "Pengaruh Musim Terhadap Penyewa ", "Perilaku Penyewa kasual dan terdaftar ", "Clustering"])
+# Fix working day columns format
+hourly_data['workingday'] = hourly_data['workingday'].replace({0: 'Non Working Day', 1: 'Working Day'})
 
-with tab1:
-    
-    # Ensure 'dteday' is in datetime format
-    all_data['dteday'] = pd.to_datetime(all_data['dteday'])
+# Adjust the hour format
+hourly_data['hr']+=1
 
-    # Create a new column for year
-    all_data['year'] = all_data['yr'].map({0: 2011, 1: 2012})  # Convert year code to actual year
-    all_data['month'] = all_data['dteday'].dt.month_name()  # Extract month name
+year_option = st.sidebar.selectbox(
+    'Select Year',
+    (2011, 2012)
+)
 
-    # Group by month, year and user type
-    monthly_user_data = all_data.groupby(['month', 'year']).agg({'casual': 'sum', 'registered': 'sum'}).reset_index()
+hour_option = st.sidebar.selectbox(
+    'Select Hour',
+    tuple(range(1,25))
+)
 
-    # Pivot the data for plotting
-    pivot_data = monthly_user_data.pivot_table(index='month', columns='year', values=['casual', 'registered'], fill_value=0)
+season_option = st.sidebar.selectbox(
+    'Select Season',
+    ('Winter', 'Spring', 'Summer', 'Fall')
+)
 
-    # Sort the months in the correct order
-    months_order = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 
-                    'August', 'September', 'October', 'November', 'December']
-    pivot_data = pivot_data.reindex(months_order)
+# Create columns to divide dashboard into 3
+col1, col2, col3 = st.columns((1, 2, 2), gap='medium')
 
-    # Create line charts for casual and registered users
-    fig, axes = plt.subplots(nrows=2, ncols=1, figsize=(12, 8))
+# First column
+with col1:
+    # About
+    st.subheader('About')
+    st.markdown("""
+        - Data: [Bike Sharing Dataset](https://drive.google.com/file/d/1RaBmV6Q6FYWU4HWZs80Suqd7KQC34diQ/view?usp=sharing)   
 
-    # Plot for casual users
-    for year in [2011, 2012]:
-        axes[0].plot(pivot_data.index, pivot_data['casual'][year], marker='o', label=f'Year {year}')
+        - Weather Based: The average amount of bikes shared per hour for each weather
 
-    axes[0].set_title('Jumlah Penyewa Sepeda Casual Sepanjang Tahun Berdasarkan Bulan')
-    axes[0].set_xlabel('Bulan')
-    axes[0].set_ylabel('Jumlah Penyewa Casual')
-    axes[0].set_xticklabels(months_order, rotation=45)
-    axes[0].legend(title='Tahun')
-    axes[0].grid()
-
-    # Plot for registered users
-    for year in [2011, 2012]:
-        axes[1].plot(pivot_data.index, pivot_data['registered'][year], marker='o', label=f'Year {year}')
-
-    axes[1].set_title('Jumlah Penyewa Sepeda Registered Sepanjang Tahun Berdasarkan Bulan')
-    axes[1].set_xlabel('Bulan')
-    axes[1].set_ylabel('Jumlah Penyewa Registered')
-    axes[1].set_xticklabels(months_order, rotation=45)
-    axes[1].legend(title='Tahun')
-    axes[1].grid()
-
-    # Adjust layout
-    plt.tight_layout()
-    
-    
-    # Show plot in Streamlit
-    st.pyplot(fig)
-    st.header("Dataset Preview")
-    st.dataframe(all_data.head(10))  # Menampilkan 10 baris pertama dari dataset
-
-    # Convert 'season' and 'dteday' for better readability
-    season_map = {1: 'Spring', 2: 'Summer', 3: 'Fall', 4: 'Winter'}
-    all_data['season'] = all_data['season'].map(season_map)
-    all_data['dteday'] = pd.to_datetime(all_data['dteday'])
-    
-   # Visualisasi perilaku pengguna casual dan registered berdasarkan bulan
-    st.header("Perilaku Pengguna Casual vs Registered Berdasarkan Bulan")
-    
-    # Filter data untuk tahun 2011 dan 2012
-    data_2011 = all_data[all_data['year'] == 2011]
-    data_2012 = all_data[all_data['year'] == 2012]
-    
-    # Group by month for both years
-    monthly_2011 = data_2011.groupby('month').agg({'casual': 'sum', 'registered': 'sum'}).reindex(months_order)
-    monthly_2012 = data_2012.groupby('month').agg({'casual': 'sum', 'registered': 'sum'}).reindex(months_order)
-    
-    # Plot for 2011
-    fig, ax = plt.subplots(figsize=(10, 6))
-    ax.plot(monthly_2011.index, monthly_2011['casual'], label='Casual Users', color='orange', marker='o')
-    ax.plot(monthly_2011.index, monthly_2011['registered'], label='Registered Users', color='blue', marker='o')
-    ax.set_xlabel('Bulan')
-    ax.set_ylabel('Jumlah Pengguna')
-    ax.set_title('Perilaku Pengguna Casual vs Registered di Tahun 2011')
-    ax.set_xticklabels(months_order, rotation=45)
-    ax.legend()
-    ax.grid()
-    st.pyplot(fig)
-    
-    # Plot for 2012
-    fig, ax = plt.subplots(figsize=(10, 6))
-    ax.plot(monthly_2012.index, monthly_2012['casual'], label='Casual Users', color='orange', marker='o')
-    ax.plot(monthly_2012.index, monthly_2012['registered'], label='Registered Users', color='blue', marker='o')
-    ax.set_xlabel('Bulan')
-    ax.set_ylabel('Jumlah Pengguna')
-    ax.set_title('Perilaku Pengguna Casual vs Registered di Tahun 2012')
-    ax.set_xticklabels(months_order, rotation=45)
-    ax.legend()
-    ax.grid()
-    st.pyplot(fig)
-    
-    
-with tab2:
-    
-    plot_type = st.selectbox("Choose", ["Weekday & Musim", "Workingday & Musim", "Holiday & Musim"])
-    
-    if plot_type == "Weekday & Musim":
-        st.image("dashboard/dashboard_pitc/musimdanweekday.png", caption="Weekday dan Musim")    
-        long_text ='''
-    1. Fluktuasi Musiman: Terdapat pola musiman yang jelas dalam jumlah penyewa. Musim Fall (Gugur) umumnya memiliki jumlah penyewa tertinggi, diikuti oleh Summer (Musim Panas). Musim Spring (Musim Semi) dan Winter (Musim Dingin) cenderung memiliki jumlah penyewa yang lebih rendah. Ini menunjukkan bahwa faktor cuaca dan aktivitas musiman sangat mempengaruhi minat masyarakat untuk menyewa sepeda.
-    2. Pola Harian:
-        - Hari Kerja vs Akhir Pekan: Secara umum, jumlah penyewa pada hari kerja (Senin hingga Jumat) lebih tinggi dibandingkan akhir pekan (Sabtu dan Minggu). Ini mungkin karena banyak orang menggunakan sepeda sebagai alat transportasi untuk bekerja atau aktivitas sehari-hari lainnya.
-        - Perbedaan Hari Kerja: Terdapat sedikit perbedaan jumlah penyewa di antara hari-hari kerja. Ini dipengaruhi oleh faktor-faktor seperti hari libur nasional, acara khusus, atau kondisi cuaca pada hari tersebut.
-
-    3. Interaksi Musim dan Hari: Kombinasi antara musim dan hari dalam seminggu memberikan pola yang lebih kompleks. Misalnya, pada musim panas, jumlah penyewa pada akhir pekan mungkin lebih tinggi dibandingkan musim dingin karena cuaca yang lebih mendukung untuk beraktivitas di luar ruangan.
-'''
-        with st.container():
-            st.markdown("**Dari hasil visualsisasi diatas dapat dilihat bahwa :**")
-            st.markdown(long_text)
-    
-    elif plot_type == "Workingday & Musim":
-        st.image("dashboard/dashboard_pitc/musimdanworkingday.png", caption="Workingday dan Musim")
-        long_text ='''
-    1. Dominasi Hari Kerja: Secara umum, jumlah penyewa pada hari kerja lebih tinggi dibandingkan akhir pekan di semua musim. Ini mengindikasikan bahwa banyak orang menggunakan sepeda sebagai alat transportasi sehari-hari untuk bekerja atau aktivitas lainnya.
-    
-    2. Fluktuasi Musiman: Terdapat pola musiman yang jelas dalam jumlah penyewa, baik pada hari kerja maupun akhir pekan. Musim gugur (Fall) umumnya memiliki jumlah penyewa tertinggi, diikuti oleh musim panas (Summer). Musim semi (Spring) dan musim dingin (Winter) cenderung memiliki jumlah penyewa yang lebih rendah. Ini menunjukkan bahwa faktor cuaca dan aktivitas musiman sangat mempengaruhi minat masyarakat untuk menyewa sepeda.
-    3. Interaksi Musim dan Hari Kerja: Kombinasi antara musim dan hari kerja memberikan pola yang lebih kompleks. Misalnya, pada musim panas, jumlah penyewa pada akhir pekan mungkin lebih tinggi dibandingkan musim dingin karena cuaca yang lebih mendukung untuk beraktivitas di luar ruangan.
-'''
-        with st.container():
-            st.markdown("**Dari hasil visualsisasi diatas dapat dilihat bahwa :**")
-            st.markdown(long_text)
+        - Hour Based: The average amount of bikes shared for each hour
+                
+        - Weather Occurences: Total occurrences of each weather during each hour for each season
         
-        
-    elif plot_type == "Holiday & Musim":
-        st.image("dashboard/dashboard_pitc/musimdanholiday.png", caption="Holidaydan Musim")
-        long_text ='''1. Musim Fall (Gugur) merupakan musim dengan jumlah penyewa tertinggi baik pada hari libur maupun bukan libur. Ini mengindikasikan bahwa cuaca atau aktivitas pada musim gugur mungkin lebih mendukung aktivitas bersepeda
-        
-2. Jumlah penyewa secara umum lebih tinggi pada hari-hari yang bukan libur. Ini masuk akal karena pada hari kerja, orang-orang mungkin lebih sering menggunakan sepeda untuk beraktivitas sehari-hari seperti bekerja atau bersekolah.        
-3. Pada semua musim, jumlah penyewa pada hari libur lebih rendah dibandingkan hari yang bukan libur. Ini menunjukkan bahwa meskipun ada peningkatan jumlah penyewa pada hari libur, namun secara keseluruhan, aktivitas bersepeda lebih tinggi pada hari kerja.
-4. Terdapat fluktuasi jumlah penyewa yang cukup signifikan antara musim. Ini mengindikasikan bahwa faktor musiman seperti cuaca, suhu, dan panjang hari memiliki pengaruh yang cukup besar terhadap minat masyarakat untuk menyewa sepeda.'''
-        with st.container():
-            st.markdown("**Dari hasil visualsisasi diatas dapat dilihat bahwa :**")
-            st.markdown(long_text)
+        - Working Day: The average amount of bike shared during each hour for each season between working day and non working day        
+                
+        - Peak & Low: Count the maximum & minimum bike shared per day & hour for this year
+    """)
 
-        
-with tab3:
-    plot_type = st.selectbox("Choose", [
-    "Penyewa Casual by Weekday & Musim", 
-    "Penyewa Casual by Workingday & Musim", 
-    "Penyewa Casual by Holiday & Musim", 
-    "Penyewa Registered by Weekday & Musim", 
-    "Penyewa Registered by Workingday & Musim", 
-    "Penyewa Registered by Holiday & Musim"
-])
+    # Draw the first table
+    st.subheader('Best Season')
+    season_temp_count_data = daily_data[daily_data['yr']==(year_option-2011)].groupby('season')[['cnt', 'temp']].mean().sort_values(by='cnt', ascending=False)
+    season_temp_count_data['temp'] *= (47) - 8
+    season_temp_count_data.columns = ['Average Daily Bike Shared Count', 'Average Daily Temperature']
+    season_temp_count_data.rename_axis('Season', inplace=True)
+    st.table(data=season_temp_count_data)
 
-    if plot_type == "Penyewa Casual by Weekday & Musim":
-        st.image("dashboard/dashboard_pitc/casualbyweekdaynseason.png", caption="Penyewa Casual by Weekday & Musim")
-        long_text ='''
-    1. Fluktuasi Harian: Jumlah penyewa kasual cenderung lebih tinggi pada akhir pekan (Sabtu dan Minggu) dibandingkan hari kerja. Ini menunjukkan bahwa banyak orang menggunakan sepeda kasual untuk rekreasi atau aktivitas di luar ruangan pada akhir pekan.
-    2. Pola Musiman: Terdapat perbedaan jumlah penyewa kasual di setiap musim, meskipun tidak sejelas pada visualisasi sebelumnya. Namun, secara umum, musim-musim tertentu mungkin memiliki preferensi yang berbeda terkait dengan penggunaan sepeda kasual.
-    3. Interaksi Hari dan Musim: Kombinasi antara hari dalam minggu dan musim memberikan pola yang lebih kompleks. Misalnya, pada musim panas, jumlah penyewa kasual pada akhir pekan mungkin lebih tinggi dibandingkan musim dingin karena cuaca yang lebih mendukung untuk beraktivitas di luar ruangan.
-'''
-        with st.container():
-            st.markdown("**Dari hasil visualsisasi diatas dapat dilihat bahwa :**")
-            st.markdown(long_text)
+# Second column
+with col2:
+    st.subheader('Weather Based')
 
-    elif plot_type == "Penyewa Casual by Workingday & Musim":
-        st.image("dashboard/dashboard_pitc/casualbyworkingdaynseason.png", caption="Penyewa Casual by Workingday & Musim")
-        long_text ='''
-  1. Dominasi Hari Libur: Secara umum, jumlah penyewa kasual pada hari libur (non-working day) lebih tinggi dibandingkan hari kerja. Ini mengindikasikan bahwa banyak orang menggunakan sepeda kasual untuk rekreasi atau aktivitas di luar ruangan pada akhir pekan.
-
-    2. Fluktuasi Musiman: Terdapat perbedaan jumlah penyewa kasual di setiap musim. Musim gugur (fall) dan musim panas (summer) umumnya memiliki jumlah penyewa kasual yang lebih tinggi dibandingkan musim semi (spring) dan musim dingin (winter). Ini menunjukkan bahwa faktor cuaca dan aktivitas musiman sangat mempengaruhi minat masyarakat untuk menyewa sepeda kasual.
-
-    3. Interaksi Hari dan Musim: Kombinasi antara hari kerja dan musim memberikan pola yang lebih kompleks. Misalnya, pada musim panas, jumlah penyewa kasual pada akhir pekan mungkin lebih tinggi dibandingkan musim dingin karena cuaca yang lebih mendukung untuk beraktivitas di luar ruangan.
-
-'''
-        with st.container():
-            st.markdown("**Dari hasil visualsisasi diatas dapat dilihat bahwa :**")
-            st.markdown(long_text)
-
-
-    elif plot_type == "Penyewa Casual by Holiday & Musim":
-        st.image("dashboard/dashboard_pitc/casualbyholidaynseason.png", caption="Penyewa Casual by Holiday & Musim")
-        long_text ='''
-   1.  Dominasi Hari Libur: Secara umum, jumlah penyewa kasual pada hari libur (Holiday) lebih tinggi dibandingkan hari kerja (No Holiday). Ini mengindikasikan bahwa banyak orang menggunakan sepeda kasual untuk rekreasi atau aktivitas di luar ruangan pada akhir pekan atau hari libur.
-
-    2. Fluktuasi Musiman: Terdapat perbedaan jumlah penyewa kasual di setiap musim. Musim gugur (Fall) dan musim panas (Summer) umumnya memiliki jumlah penyewa kasual yang lebih tinggi dibandingkan musim semi (Spring) dan musim dingin (Winter). Ini menunjukkan bahwa faktor cuaca dan aktivitas musiman sangat mempengaruhi minat masyarakat untuk menyewa sepeda kasual.
-
-    3. Interaksi Hari Libur dan Musim: Kombinasi antara hari libur dan musim memberikan pola yang lebih kompleks. Misalnya, pada musim panas, jumlah penyewa kasual pada hari libur mungkin lebih tinggi dibandingkan musim dingin karena cuaca yang lebih mendukung untuk beraktivitas di luar ruangan.
-
-'''
-        with st.container():
-            st.markdown("**Dari hasil visualsisasi diatas dapat dilihat bahwa :**")
-            st.markdown(long_text)
-
-
-    elif plot_type == "Penyewa Registered by Weekday & Musim":
-        st.image("dashboard/dashboard_pitc/registeredbyweekdaynseason.png", caption="Penyewa Registered by Weekday & Musim")
-        long_text ='''
-   1. Fluktuasi Harian: Jumlah penyewa registered cenderung lebih tinggi pada akhir pekan (Sabtu dan Minggu) dibandingkan hari kerja. Ini mengindikasikan bahwa banyak pengguna terdaftar menggunakan sepeda untuk rekreasi atau aktivitas di luar ruangan pada akhir pekan.
-    2. Pola Musiman: Terdapat perbedaan jumlah penyewa registered di setiap musim. Musim gugur (Fall) dan musim panas (Summer) umumnya memiliki jumlah penyewa registered yang lebih tinggi dibandingkan musim semi (Spring) dan musim dingin (Winter). Ini menunjukkan bahwa faktor cuaca dan aktivitas musiman sangat mempengaruhi minat masyarakat untuk menyewa sepeda.
-    3. Interaksi Hari dan Musim: Kombinasi antara hari dalam minggu dan musim memberikan pola yang lebih kompleks. Misalnya, pada musim panas, jumlah penyewa registered pada akhir pekan mungkin lebih tinggi dibandingkan musim dingin karena cuaca yang lebih mendukung untuk beraktivitas di luar ruangan.
-
-'''
-        with st.container():
-            st.markdown("**Dari hasil visualsisasi diatas dapat dilihat bahwa :**")
-            st.markdown(long_text)
-
-
-    elif plot_type == "Penyewa Registered by Workingday & Musim":
-        st.image("dashboard/dashboard_pitc/registeredbyworkingdaynseason.png", caption="Penyewa Registered by Workingday & Musim")
-        long_text ='''
-
-   1.  Dominasi Hari Libur: Secara umum, jumlah penyewa registered pada hari libur (non-working day) lebih tinggi dibandingkan hari kerja. Ini mengindikasikan bahwa banyak pengguna terdaftar menggunakan sepeda untuk rekreasi atau aktivitas di luar ruangan pada akhir pekan.
-
-    2. Fluktuasi Musiman: Terdapat perbedaan jumlah penyewa registered di setiap musim. Musim gugur (fall) dan musim panas (summer) umumnya memiliki jumlah penyewa registered yang lebih tinggi dibandingkan musim semi (spring) dan musim dingin (winter). Ini menunjukkan bahwa faktor cuaca dan aktivitas musiman sangat mempengaruhi minat masyarakat untuk menyewa sepeda.
-
-    3. Interaksi Hari dan Musim: Kombinasi antara hari kerja dan musim memberikan pola yang lebih kompleks. Misalnya, pada musim panas, jumlah penyewa registered pada akhir pekan mungkin lebih tinggi dibandingkan musim dingin karena cuaca yang lebih mendukung untuk beraktivitas di luar ruangan.
-'''
-        with st.container():
-            st.markdown("**Dari hasil visualsisasi diatas dapat dilihat bahwa :**")
-            st.markdown(long_text)
-
-
-    elif plot_type == "Penyewa Registered by Holiday & Musim":
-        st.image("dashboard/dashboard_pitc/registeredbyholidaynseason.png", caption="Penyewa Registered by Holiday & Musim")
-        long_text ='''
-    1. Dominasi Hari Libur: Secara umum, jumlah penyewa registered pada Kerja(No Holiday) jauh lebih tinggi dibandingkan di hari Libur (Holiday). Ini mengindikasikan bahwa banyak pengguna terdaftar menggunakan sepeda untuk rekreasi atau aktivitas di luar ruangan pada akhir pekan atau hari libur.
-
-    2. Fluktuasi Musiman: Terdapat perbedaan jumlah penyewa registered di setiap musim. Musim gugur (Fall) dan musim panas (Summer) umumnya memiliki jumlah penyewa registered yang lebih tinggi dibandingkan musim semi (Spring) dan musim dingin (Winter). Ini menunjukkan bahwa faktor cuaca dan aktivitas musiman sangat mempengaruhi minat masyarakat untuk menyewa sepeda.
-
-    3. Interaksi Hari Libur dan Musim: Kombinasi antara hari libur dan musim memberikan pola yang lebih kompleks. Misalnya, pada musim panas, jumlah penyewa registered pada hari libur mungkin lebih tinggi dibandingkan musim dingin karena cuaca yang lebih mendukung untuk beraktivitas di luar ruangan.
-
-'''
-        with st.container():
-            st.markdown("**Dari hasil visualsisasi diatas dapat dilihat bahwa :**")
-            st.markdown(long_text)
-
-
-        
+    # Pick the data
+    weather_data = hourly_data[(hourly_data['yr'] == (year_option - 2011)) & (hourly_data['season'] == season_option)].groupby('weathersit')['cnt'].mean().reset_index()
     
-# Isi tab 3: Clustering
-with tab4:
-    plot_type = st.selectbox("Choose", [
-    "Cluster Penyewa by Musim", 
-    "Cluster Perilaku Penyewa Weekday", 
-    "Cluster Perilaku Penyewa Workingday", 
-    "Cluster Perilaku Penyewa Holiday"
-])
+    # Plotting the weather data
+    chart = alt.Chart(weather_data).mark_bar(color='blue').encode(
+        x=alt.X('weathersit:O', title='Weather Situation'),  # Categorical axis for weather situation
+        y=alt.Y('cnt:Q', title='Average Hourly Bike Shared Counts'),  # Quantitative axis for average bike counts
+        tooltip=['weathersit', 'cnt']  # Tooltip showing details on hover
+    ).properties(
+        title='Hourly Bike Shared Counts'
+    )
+    st.altair_chart(chart, use_container_width=True)
 
-    if plot_type == "Cluster Penyewa by Musim":
-        st.image("dashboard/dashboard_pitc/cluster_sewa_by_season.png")
-        long_text ='''
+    st.subheader('Hour Based')
+
+    # Pick the data
+    hourly_bike_count = hourly_data[(hourly_data['yr'] == (year_option - 2011)) & (hourly_data['season'] == season_option)].groupby('hr')['cnt'].mean().reset_index()
     
-    1. Segmentasi Pasar:
-        - Musim Puncak: Terdapat cluster yang menunjukkan jumlah penyewaan yang sangat tinggi pada suhu tertentu. Ini mengindikasikan musim puncak dalam bisnis penyewaan sepeda. Perusahaan dapat mempersiapkan diri dengan meningkatkan jumlah sepeda yang tersedia dan mungkin menawarkan promo khusus selama musim puncak.
-        - Musim Sepi: Sebaliknya, ada juga cluster yang menunjukkan jumlah penyewaan yang lebih rendah. Perusahaan dapat memanfaatkan periode ini untuk melakukan perawatan rutin pada sepeda atau menawarkan paket promosi khusus untuk menarik pelanggan.
-    2. Strategi Harga:
-        - Harga Dinamis: Perusahaan dapat menerapkan strategi harga yang dinamis berdasarkan musim dan suhu. Misalnya, menaikkan harga sewa selama musim puncak dan memberikan diskon pada musim sepi.
-    3. Perencanaan Inventaris:
-        - Prediksi Permintaan: Dengan memahami pola penyewaan pada setiap cluster, perusahaan dapat lebih akurat dalam memprediksi permintaan sepeda di masa mendatang dan mengatur inventaris secara lebih efisien.
-        - Lokasi Stasiun Sepeda: Perusahaan dapat mengoptimalkan lokasi stasiun sepeda berdasarkan pola penggunaan pada setiap cluster. Misalnya, menempatkan lebih banyak sepeda di area yang populer selama musim puncak.
-    4. Pengembangan Produk:
-        - Aksesori Musim Dingin: Jika ada cluster yang menunjukkan penggunaan sepeda yang cukup tinggi meskipun pada suhu rendah, perusahaan dapat mempertimbangkan untuk menyediakan aksesori tambahan seperti sarung tangan, topi, atau jaket untuk menarik lebih banyak pelanggan.
+    # Plotting the weather data
+    chart = alt.Chart(hourly_bike_count).mark_bar(color='blue').encode(
+        x=alt.X('hr:O', title='Hour'),  # Categorical axis for weather situation
+        y=alt.Y('cnt:Q', title='Average Hourly Bike Shared Counts'),  # Quantitative axis for average bike counts
+        tooltip=['hr', 'cnt']  # Tooltip showing details on hover
+    ).properties(
+        title='Hourly Bike Shared Counts'
+    )
+    st.altair_chart(chart, use_container_width=True)
 
-'''
-        with st.container():
-            st.markdown("**Dari hasil visualsisasi diatas dapat dilihat bahwa :**")
-            st.markdown(long_text)
-            
-    elif plot_type == "Cluster Perilaku Penyewa Weekday":
-        st.image("dashboard_pitc/cluster_perilaku_wekday.png")
-        long_text ='''
+# Third column
+with col3:
+    st.subheader('Total Bike Shared')
+
+    # Calculate the total bike shared during that year
+    total_bikes_shared = daily_data[daily_data['yr'] == (year_option - 2011)]['cnt'].sum()
+    total_bikes_shared_season = daily_data[(daily_data['yr'] == (year_option - 2011)) & (daily_data['season'] == season_option)]['cnt'].sum()
+
+    # Draw the total year & season
+    total_year, total_season = st.columns(2)
+    total_year.metric(label='Total Year', value=f"{total_bikes_shared / 1_000_000:.1f}M")
+    total_season.metric(label='Total Season', value=f"{total_bikes_shared_season / 1_000:.1f}K")
+
+    st.subheader('Peak & Low')
+    max_day = daily_data[daily_data['yr'] == (year_option - 2011)]['cnt'].max()
+    min_day = daily_data[daily_data['yr'] == (year_option - 2011)]['cnt'].min()
+    max_hour = hourly_data[hourly_data['yr'] == (year_option - 2011)]['cnt'].max()
+    min_hour = hourly_data[hourly_data['yr'] == (year_option - 2011)]['cnt'].min()
+
+    mxday, mnday, mxhour, mnhour = st.columns(4, gap='small')
+    mxday.metric(label='Peak Day', value=max_day)
+    mnday.metric(label='Lowest Day', value=min_day)
+    mxhour.metric(label='Peak Hour', value=max_hour)
+    mnhour.metric(label='Lowest Hour', value=min_hour)
+
+    # Weather occurrence during those year & season
+    st.subheader('Weather Occurrences')
+    # Draw the total year & season
+    clear, mist, light, heavy = st.columns(4, gap='small')
+    # Extract counts for each weather condition
+    counts = {
+        'Clear/Cloudy': 0,
+        'Mist': 0,
+        'Light Rain/Snow': 0,
+        'Heavy Rain/Snow': 0
+    }
+
+    # Calculate total occurences of each weather
+    total_weather = hourly_data[(hourly_data['yr'] == (year_option - 2011)) & (hourly_data['season'] == season_option) & (hourly_data['hr'] == hour_option)].groupby('weathersit').size().reset_index(name='count')
+
+    # Fill the counts dictionary based on occurrences
+    for index, row in total_weather.iterrows():
+        if row['weathersit'] in counts:
+            counts[row['weathersit']] = row['count']
     
-    - Cluster pertama cenderung memiliki jumlah penyewa reguler dan casual yang lebih tinggi.
-    - Cluster kedua memiliki jumlah penyewaan yang lebih rendah.
+    # Display the metrics in the respective columns
+    clear.metric(label='Clear/Cloudy', value=counts['Clear/Cloudy'])
+    mist.metric(label='Mist', value=counts['Mist'])
+    light.metric(label='Light Rain/Snow', value=counts['Light Rain/Snow'])
+    heavy.metric(label='Heavy Rain/Snow', value=counts['Heavy Rain/Snow'])
 
-'''
-        with st.container():
-            st.markdown("**Dari hasil visualsisasi diatas dapat dilihat bahwa :**")
-            st.markdown(long_text)
-            
-            
-    elif plot_type == "Cluster Perilaku Penyewa Workingday":
-        st.image("dashboard/dashboard_pitc/cluster_perilaku_workingday.png")
-        long_text ='''
-    - Pola serupa dengan weekday, namun dengan jumlah penyewaan reguler yang lebih tinggi. Ini menunjukkan bahwa pada hari kerja, sebagian besar pengguna adalah pengguna reguler yang mungkin menggunakan sepeda untuk commuting.
-'''
-        with st.container():
-            st.markdown("**Dari hasil visualsisasi diatas dapat dilihat bahwa :**")
-            st.markdown(long_text)
-            
-            
-    elif plot_type == "Cluster Perilaku Penyewa Holiday":
-        st.image("dashboard_pitc/cluster_perilaku_holiday.png")
-        long_text ='''
-        
-    - Jumlah penyewa casual cenderung lebih tinggi dibandingkan hari kerja, menunjukkan bahwa banyak orang menyewa sepeda untuk rekreasi pada hari libur.
-    - Ada kemungkinan adanya beberapa cluster yang mewakili area wisata atau taman yang populer.
+    st.subheader('Working Day')
+    working_day = hourly_data[(hourly_data['yr'] == (year_option - 2011)) & (hourly_data['season'] == season_option) & (hourly_data['hr'] == hour_option)].groupby('workingday')['cnt'].mean().reset_index()
+    # Create a pie/donut chart using Altair
+    chart = alt.Chart(working_day).mark_arc(innerRadius=50).encode(
+        color=alt.Color(field='workingday', type='nominal', title='Working Day'),
+        theta=alt.Theta(field='cnt', type='quantitative', title='Average Bikes Shared'),
+        tooltip=['cnt', 'workingday']
+    ).properties(
+        title='Working Day Comparison'
+    )
 
-'''
-        with st.container():
-            st.markdown("**Dari hasil visualsisasi diatas dapat dilihat bahwa :**")
-            st.markdown(long_text)
-
-            
-            
-    
-    
+    # Display the chart in Streamlit
+    st.altair_chart(chart, use_container_width=True)
