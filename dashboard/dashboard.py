@@ -2,8 +2,8 @@ import streamlit as st
 import pandas as pd
 import altair as alt
 
-DAY_PATH = 'data/day.csv'
-HOUR_PATH = 'data/hour.csv'
+DAY_PATH = 'all_data.csv'
+HOUR_PATH = 'hour.csv'
 
 st.set_page_config(
     page_title='Bike Sharing Dashboard',
