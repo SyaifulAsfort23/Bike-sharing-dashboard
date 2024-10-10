@@ -1,5 +1,5 @@
 # dashboard.py
-
+import os
 import streamlit as st
 import pandas as pd
 import matplotlib.pyplot as plt
@@ -12,11 +12,22 @@ st.set_page_config(
     layout='centered'
 )
 
+import os
+import pandas as pd
+
+print("Current working directory:", os.getcwd())
+print("Files in current directory:", os.listdir())
+
 
 # Helper function: Load data
 @st.cache_data
 def load_data():
     data = pd.read_csv('/dashboard/fixed_day.csv')
+    try:
+        data = pd.read_csv('fixed_day.csv')
+        print("File successfully loaded!")
+    except FileNotFoundError:
+        print("File not found.")
     data['dteday'] = pd.to_datetime(data['dteday'], format='mixed')  # Mixed format handling
     return data
 
