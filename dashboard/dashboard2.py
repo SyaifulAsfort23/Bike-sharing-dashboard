@@ -7,10 +7,10 @@ import seaborn as sns
 from sklearn.cluster import KMeans
 
 # Helper function: Load data
-@st.cache
+@st.cache_data
 def load_data():
     data = pd.read_csv('fixed_day.csv')
-    data['dteday'] = pd.to_datetime(data['dteday'], format='%m/%d/%Y')
+    data['dteday'] = pd.to_datetime(data['dteday'], format='mixed')  # Mixed format handling
     return data
 
 # Helper function: Group by season
@@ -43,6 +43,15 @@ st.subheader("Total Penyewa Berdasarkan Season")
 season_group = penyewa_by_season(filtered_data)
 st.dataframe(season_group)
 
+# Bar Plot Total Penyewa per Season
+st.subheader("Visualisasi Total Penyewa Berdasarkan Season")
+plt.figure(figsize=(10, 6))
+sns.barplot(x='season', y='cnt', data=season_group)
+plt.title("Total Penyewa per Season")
+plt.xlabel("Season")
+plt.ylabel("Total Penyewa")
+st.pyplot(plt)
+
 # Plot Daily Orders
 st.subheader("Daily Orders Plot")
 plt.figure(figsize=(10, 6))
@@ -57,16 +66,43 @@ st.subheader("Penyewa Berdasarkan Casual dan Registered")
 casual_registered_group = penyewa_grouped_by_casual_registered(filtered_data)
 st.dataframe(casual_registered_group)
 
+# Heatmap Casual dan Registered
+st.subheader("Visualisasi Penyewa Berdasarkan Casual dan Registered")
+plt.figure(figsize=(10, 6))
+sns.heatmap(casual_registered_group.pivot("casual", "registered", "cnt"), cmap='coolwarm', annot=True)
+plt.title("Heatmap Casual vs Registered")
+plt.xlabel("Registered")
+plt.ylabel("Casual")
+st.pyplot(plt)
+
 # Penyewa Casual berdasarkan Weekday, Workingday, & Holiday
 st.subheader("Penyewa Casual Berdasarkan Weekday, Workingday, & Holiday")
 wday_workday_holiday_group = penyewa_by_wday_workday_holiday(filtered_data)
 casual_group = wday_workday_holiday_group[['weekday', 'workingday', 'holiday', 'casual']]
 st.dataframe(casual_group)
 
+# Bar Plot Penyewa Casual Berdasarkan Weekday, Workingday, & Holiday
+st.subheader("Visualisasi Penyewa Casual Berdasarkan Weekday, Workingday, & Holiday")
+plt.figure(figsize=(10, 6))
+sns.barplot(x='weekday', y='casual', hue='workingday', data=casual_group)
+plt.title("Penyewa Casual Berdasarkan Weekday dan Workingday")
+plt.xlabel("Weekday")
+plt.ylabel("Total Penyewa Casual")
+st.pyplot(plt)
+
 # Penyewa Registered berdasarkan Weekday, Workingday, & Holiday
 st.subheader("Penyewa Registered Berdasarkan Weekday, Workingday, & Holiday")
 registered_group = wday_workday_holiday_group[['weekday', 'workingday', 'holiday', 'registered']]
 st.dataframe(registered_group)
+
+# Bar Plot Penyewa Registered Berdasarkan Weekday, Workingday, & Holiday
+st.subheader("Visualisasi Penyewa Registered Berdasarkan Weekday, Workingday, & Holiday")
+plt.figure(figsize=(10, 6))
+sns.barplot(x='weekday', y='registered', hue='workingday', data=registered_group)
+plt.title("Penyewa Registered Berdasarkan Weekday dan Workingday")
+plt.xlabel("Weekday")
+plt.ylabel("Total Penyewa Registered")
+st.pyplot(plt)
 
 # Exploratory Lanjutan: Clustering Penyewa Casual dan Registered Berdasarkan Season
 st.subheader("Clustering Penyewa Casual dan Registered Berdasarkan Season")
