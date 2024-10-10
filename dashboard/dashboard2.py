@@ -37,12 +37,6 @@ def penyewa_by_season(data):
 # Load the data
 data = load_data()
 
-
-
-
-
-
-
 # Changes Season format
 data['season'] = data['season'].replace({1: 'Winter', 2: 'Spring', 3: 'Summer', 4: 'Fall'})
 
