@@ -154,17 +154,7 @@ with col1:
     hourmax.metric(label='Peak Hour', value=max_hour)
     hourmin.metric(label='Lowest Hour', value=min_hour)
     
-    # Fill the counts dictionary based on occurrences
-    for index, row in total_weather.iterrows():
-        if row['weathersit'] in counts:
-            counts[row['weathersit']] = row['count']
-    
-    # Display the metrics in the respective columns
-    clear.metric(label='Clear/Cloudy', value=counts['Clear/Cloudy'])
-    mist.metric(label='Mist', value=counts['Mist'])
-    light.metric(label='Light Rain/Snow', value=counts['Light Rain/Snow'])
-    heavy.metric(label='Heavy Rain/Snow', value=counts['Heavy Rain/Snow'])
-
+ 
     st.subheader('Working Day')
     working_day = hour_data[(hour_data['yr'] == (year_option - 2011)) & (hour_data['season'] == season_option) & (hour_data['hr'] == day_option)].groupby('workingday')['cnt'].mean().reset_index()
     # Create a pie/donut chart using Altairx
