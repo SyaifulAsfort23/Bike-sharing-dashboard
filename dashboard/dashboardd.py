@@ -64,14 +64,14 @@ end_date = st.sidebar.date_input('End date', data['dteday'].max())
 
 filtered_data = data[(data['dteday'] >= pd.to_datetime(start_date)) & (data['dteday'] <= pd.to_datetime(end_date))]
 
+# Dashboard Section
+st.title("Dashboard Bike Share")
 
 # Total Penyewa berdasarkan Season
 st.subheader("Total Penyewa Berdasarkan Season")
 season_group = penyewa_by_season(filtered_data)
 st.dataframe(season_group)
 
-# Dashboard Section
-st.title("Dashboard Penyewa Berdasarkan Musim dan Hari")
 
 
 # Bar Plot yang Dibagi Berdasarkan Casual dan Registered
