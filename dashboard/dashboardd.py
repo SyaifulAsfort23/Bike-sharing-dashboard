@@ -22,14 +22,7 @@ print("Files in current directory:", os.listdir())
 # Helper function: Load data
 @st.cache_data
 def load_data():
-    data = pd.read_csv('fixed_day.csv')
-    try:
-        data = pd.read_csv('dashboard/fixed_day.csv')
-        print("File successfully loaded!")
-    except FileNotFoundError:
-        print("File not found.")
-    data['dteday'] = pd.to_datetime(data['dteday'], format='mixed')  # Mixed format handling
-    return data
+    data = pd.read_csv('dashboard/fixed_day.csv')
 
 # Helper function: Group by season
 def penyewa_by_season(data):
@@ -61,11 +54,8 @@ def penyewa_by_wday_workday_holiday(data):
 
 
 # Load the data
+
 data = load_data()
-
-# Changes Season format
-data['season'] = data['season'].replace({1: 'Winter', 2: 'Spring', 3: 'Summer', 4: 'Fall'})
-
 
 
 # Sidebar for date filtering
