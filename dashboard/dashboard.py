@@ -53,25 +53,42 @@ day_option = st.sidebar.selectbox(
 col1, col2, col3 = st.columns((2, 2, 3), gap='medium')
 
 # Column 1: Pengaruh Musim terhadap Penyewaan Sepeda
-with col1:
+with col3:
     
     st.subheader('Pengaruh Musim terhadap Penyewaan Sepeda')
 
+    # Calculate the total bike shared during that year
+    holiday_season_counts = daily_data[(daily_data['yr'] == (year_option - 2011)) & (daily_data['season'] == season_option)]['cnt'].sum()
+
+
+    # Menghitung jumlah penyewa sepeda selama musim tertentu di tahun yang dipilih
+    total_rentals = daily_data[(daily_data['yr'] == (year_option - 2011)) & (daily_data['season'] == season_option)]['cnt'].sum()
+
     # 1. Jumlah Penyewa Berdasarkan Holiday dan Season
     holiday_season_counts = daily_data.groupby(['holiday', 'season'])['cnt'].sum().reset_index()
+
     # Mengubah kode holiday menjadi deskripsi
     holiday_season_counts['holiday'] = holiday_season_counts['holiday'].map({0: 'No Holiday', 1: 'Holiday'})
 
     # Visualisasi Jumlah Penyewa Berdasarkan Holiday dan Season
     fig1, ax1 = plt.subplots(figsize=(10, 6))
-    sns.barplot(data=holiday_season_counts, x='season', y='cnt', hue='holiday',ax=ax1)
+    sns.barplot(data=holiday_season_counts, x='season', y='cnt', hue='holiday', ax=ax1)
+
+    # Menyesuaikan judul dan label pada sumbu
     ax1.set_title('Jumlah Penyewa Berdasarkan Holiday dan Season')
     ax1.set_xlabel('Musim')
     ax1.set_ylabel('Jumlah Penyewa')
+
+    # Menyesuaikan label pada sumbu x
     ax1.set_xticks([0, 1, 2, 3])
     ax1.set_xticklabels(['Spring', 'Summer', 'Fall', 'Winter'])
+
+    # Menambahkan legenda
     ax1.legend(title='Hari Libur')
+
+    # Menampilkan visualisasi
     st.pyplot(fig1)
+
 
 
     # 1. Jumlah Penyewa Berdasarkan Holiday dan Season
@@ -79,19 +96,14 @@ with col1:
 
     # Visualisasi Jumlah Penyewa Berdasarkan Holiday dan Season
     fig2, ax2 = plt.subplots(figsize=(10, 6))
-    sns.barplot(data=weekday_season_counts, x='season', y='cnt', hue='weekday',ax=ax1)
+    sns.barplot(data=weekday_season_counts, x='season', y='cnt', hue='weekday',ax=ax2)
     ax2.set_title('Jumlah Penyewa Berdasarkan Weekday dan Season')
     ax2.set_xlabel('Musim')
     ax2.set_ylabel('Jumlah Penyewa')
     ax2.set_xticks([0, 1, 2, 3])
     ax2.set_xticklabels(['Spring', 'Summer', 'Fall', 'Winter'])
-    ax2.legend(title='Weekday')
+    ax2.legend(title='Weexkday')
     st.pyplot(fig2)
-
-
-
-
-
 
     
     # Data pengaruh musim terhadap penyewaan sepeda
@@ -116,30 +128,9 @@ with col1:
 with col2:
     st.subheader('Perilaku Penyewa Casual dan Registered')
 
-    # Data penyewa casual dan registered
-    user_behavior = daily_data[daily_data['yr'] == (year_option - 2011)].groupby('season')[['casual', 'registered']].mean().reset_index()
-    
-    # Reshape data for Altair-friendly format
-    user_behavior = pd.melt(user_behavior, id_vars=['season'], value_vars=['casual', 'registered'], 
-                            var_name='User Type', value_name='Average Rentals')
-
-    # Plotting data penyewa casual vs registered per musim
-    chart = alt.Chart(user_behavior).mark_bar().encode(
-        x=alt.X('season:O', title='Season'),
-        y=alt.Y('Average Rentals:Q', title='Average Daily Rentals'),
-        color=alt.Color('User Type:N', title='User Type'),
-        tooltip=['season', 'Average Rentals', 'User Type']
-    ).properties(
-        title='Average Daily Rentals by Casual and Registered Users per Season'
-    )
-    st.altair_chart(chart, use_container_width=True)
-    st.markdown("""
-        **Kesimpulan:** Data ini menunjukkan perbedaan perilaku antara penyewa casual dan registered di setiap musim. 
-        Dengan informasi ini, kita bisa merencanakan strategi untuk mengonversi pengguna casual menjadi pelanggan tetap.
-    """)
 
 
-with col3:
+with col1:
     st.subheader('Total Bike Shared')
 
     # Calculate the total bike shared during that year
@@ -162,23 +153,7 @@ with col3:
     daymin.metric(label='Lowest Day', value=min_day)
     hourmax.metric(label='Peak Hour', value=max_hour)
     hourmin.metric(label='Lowest Hour', value=min_hour)
-
-    # Weather occurrence during those year & season
-    st.subheader('Weather Occurrences')
-    # Draw the total year & season
-    clear, mist, light, heavy = st.columns(4, gap='small')
-    # Extract counts for each weather condition
-    counts = {
-        'Clear/Cloudy': 0,
-        'Mist': 0,
-        'Light Rain/Snow': 0,
-        'Heavy Rain/Snow': 0
-    }
-
-    # Calculate total occurences of each weather
-    total_weather = hour_data[(hour_data['yr'] == (year_option - 2011)) & 
-    (hour_data['season'] == season_option) & (hour_data['hr'] == day_option)].groupby('weathersit').size().reset_index(name='count')
-
+    
     # Fill the counts dictionary based on occurrences
     for index, row in total_weather.iterrows():
         if row['weathersit'] in counts:
