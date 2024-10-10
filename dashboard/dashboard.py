@@ -1,180 +1,169 @@
+# dashboard.py
+
 import streamlit as st
 import pandas as pd
-import altair as alt
-import seaborn as sns
 import matplotlib.pyplot as plt
+import seaborn as sns
+from sklearn.cluster import KMeans
 
-
-day_shape = 'fixed_day.csv'
-hour_shape = 'hour.csv'
-
-st.set_page_config(
-    page_title='Bike Sharing Dashboard',
-    layout='wide'
-)
-
+# Helper function: Load data
 @st.cache_data
-def load_data(file_path):
-    data = pd.read_csv(file_path)
+def load_data():
+    data = pd.read_csv('fixed_day.csv')
+    data['dteday'] = pd.to_datetime(data['dteday'], format='mixed')  # Mixed format handling
     return data
 
-# Load data
-daily_data = load_data(day_shape)
-hour_data = load_data(hour_shape)
+# Helper function: Group by season
+def penyewa_by_season(data):
+    return data.groupby('season')[['casual', 'registered', 'cnt']].sum().reset_index()
 
+# Helper function: Group by weekday, workingday, holiday in each season
+def penyewa_by_wday_workday_holiday(data):
+    return data.groupby(['season', 'weekday', 'workingday', 'holiday'])[['casual', 'registered', 'cnt']].sum().reset_index()
+
+# Helper function: Group by casual and registered
+def penyewa_grouped_by_casual_registered(data):
+    return data[['casual', 'registered', 'cnt']].groupby(['casual', 'registered']).sum().reset_index()
+
+# Membuat DataFrame Penyewa Berdasarkan Season
+def penyewa_by_season(data):
+    return data.groupby('season').agg({
+        'casual': 'sum',
+        'registered': 'sum',
+        'cnt': 'sum'
+    }).reset_index()
+
+
+# Load the data
+data = load_data()
 
 # Changes Season format
-daily_data['season'] = daily_data['season'].replace({1: 'Winter', 2: 'Spring', 3: 'Summer', 4: 'Fall'})
-hour_data['season'] = hour_data['season'].replace({1: 'Winter', 2: 'Spring', 3: 'Summer', 4: 'Fall'})
-
-# Sidebar options
-st.sidebar.title("Bike Sharing Dashboard")
-
-
-# Adjust the hour format
-hour_data['hr'] += 1
-
-year_option = st.sidebar.selectbox(
-    'Select Year',
-    (2011, 2012)
-)
-
-season_option = st.sidebar.selectbox(
-    'Select Season',
-    ('Winter', 'Spring', 'Summer', 'Fall')
-)
-
-day_option = st.sidebar.selectbox(
-    'Select Hour',
-    tuple(range(1,25))
-)
-
-# Create columns for the dashboard layout
-col1, col2, col3 = st.columns((2, 2, 3), gap='medium')
-
-# Column 1: Pengaruh Musim terhadap Penyewaan Sepeda
-with col3:
-    
-    st.subheader('Pengaruh Musim terhadap Penyewaan Sepeda')
-
-    # Calculate the total bike shared during that year
-    holiday_season_counts = daily_data[(daily_data['yr'] == (year_option - 2011)) & (daily_data['season'] == season_option)]['cnt'].sum()
-
-
-    # Menghitung jumlah penyewa sepeda selama musim tertentu di tahun yang dipilih
-    total_rentals = daily_data[(daily_data['yr'] == (year_option - 2011)) & (daily_data['season'] == season_option)]['cnt'].sum()
-
-    # 1. Jumlah Penyewa Berdasarkan Holiday dan Season
-    holiday_season_counts = daily_data.groupby(['holiday', 'season'])['cnt'].sum().reset_index()
-
-    # Mengubah kode holiday menjadi deskripsi
-    holiday_season_counts['holiday'] = holiday_season_counts['holiday'].map({0: 'No Holiday', 1: 'Holiday'})
-
-    # Visualisasi Jumlah Penyewa Berdasarkan Holiday dan Season
-    fig1, ax1 = plt.subplots(figsize=(10, 6))
-    sns.barplot(data=holiday_season_counts, x='season', y='cnt', hue='holiday', ax=ax1)
-
-    # Menyesuaikan judul dan label pada sumbu
-    ax1.set_title('Jumlah Penyewa Berdasarkan Holiday dan Season')
-    ax1.set_xlabel('Musim')
-    ax1.set_ylabel('Jumlah Penyewa')
-
-    # Menyesuaikan label pada sumbu x
-    ax1.set_xticks([0, 1, 2, 3])
-    ax1.set_xticklabels(['Spring', 'Summer', 'Fall', 'Winter'])
-
-    # Menambahkan legenda
-    ax1.legend(title='Hari Libur')
-
-    # Menampilkan visualisasi
-    st.pyplot(fig1)
+data['season'] = data['season'].replace({1: 'Winter', 2: 'Spring', 3: 'Summer', 4: 'Fall'})
 
 
 
-    # 1. Jumlah Penyewa Berdasarkan Holiday dan Season
-    weekday_season_counts = daily_data.groupby(['weekday', 'season'])['cnt'].sum().reset_index()
+# Sidebar for date filtering
+st.sidebar.title("Filter Rentang Tanggal")
+start_date = st.sidebar.date_input('Start date', data['dteday'].min())
+end_date = st.sidebar.date_input('End date', data['dteday'].max())
 
-    # Visualisasi Jumlah Penyewa Berdasarkan Holiday dan Season
-    fig2, ax2 = plt.subplots(figsize=(10, 6))
-    sns.barplot(data=weekday_season_counts, x='season', y='cnt', hue='weekday',ax=ax2)
-    ax2.set_title('Jumlah Penyewa Berdasarkan Weekday dan Season')
-    ax2.set_xlabel('Musim')
-    ax2.set_ylabel('Jumlah Penyewa')
-    ax2.set_xticks([0, 1, 2, 3])
-    ax2.set_xticklabels(['Spring', 'Summer', 'Fall', 'Winter'])
-    ax2.legend(title='Weexkday')
-    st.pyplot(fig2)
-
-    
-    # Data pengaruh musim terhadap penyewaan sepeda
-    seasonal_rentals = daily_data[daily_data['yr'] == (year_option - 2011)].groupby('season')['cnt'].mean().reset_index()
-    
-    # Plotting data penyewaan sepeda per musim
-    chart = alt.Chart(seasonal_rentals).mark_bar().encode(
-        x=alt.X('season:O', title='Season'),
-        y=alt.Y('cnt:Q', title='Average Daily Rentals'),
-        tooltip=['season', 'cnt']
-    ).properties(
-        title='Average Daily Bike Rentals per Season'
-    )
-    st.altair_chart(chart, use_container_width=True)
-
-    st.markdown("""
-        **Kesimpulan:** Dari data ini, kita bisa melihat bagaimana musim tertentu mempengaruhi jumlah penyewaan sepeda harian.
-        Hal ini bisa digunakan untuk memaksimalkan promosi dan penawaran khusus pada musim yang lebih rendah untuk meningkatkan pendapatan.
-    """)
-
-# Column 2: Perilaku Penyewa Casual dan Registered
-with col2:
-    st.subheader('Perilaku Penyewa Casual dan Registered')
+filtered_data = data[(data['dteday'] >= pd.to_datetime(start_date)) & (data['dteday'] <= pd.to_datetime(end_date))]
 
 
+# Total Penyewa berdasarkan Season
+st.subheader("Total Penyewa Berdasarkan Season")
+season_group = penyewa_by_season(filtered_data)
+st.dataframe(season_group)
 
-with col1:
-    st.subheader('Total Bike Shared')
+# Dashboard Section
+st.title("Dashboard Penyewa Berdasarkan Musim dan Hari")
 
-    # Calculate the total bike shared during that year
-    total_bikes_shared = daily_data[daily_data['yr'] == (year_option - 2011)]['cnt'].sum()
-    total_bikes_shared_season = daily_data[(daily_data['yr'] == (year_option - 2011)) & (daily_data['season'] == season_option)]['cnt'].sum()
 
-    # Draw the total year & season
-    total_year, total_season = st.columns(2)
-    total_year.metric(label='Total Year', value=f"{total_bikes_shared / 1_000_000:.1f}M")
-    total_season.metric(label='Total Season', value=f"{total_bikes_shared_season / 1_000:.1f}K")
+# Bar Plot yang Dibagi Berdasarkan Casual dan Registered
+st.subheader("Visualisasi Total Penyewa Berdasarkan Season (Casual dan Registered)")
 
-    st.subheader('Peak & Low')
-    max_day = daily_data[daily_data['yr'] == (year_option - 2011)]['cnt'].max()
-    min_day = daily_data[daily_data['yr'] == (year_option - 2011)]['cnt'].min()
-    max_hour = hour_data[hour_data['yr'] == (year_option - 2011)]['cnt'].max()
-    min_hour = hour_data[hour_data['yr'] == (year_option - 2011)]['cnt'].min()
 
-    daymax, daymin, hourmax, hourmin = st.columns(4, gap='small')
-    daymax.metric(label='Peak Day', value=max_day)
-    daymin.metric(label='Lowest Day', value=min_day)
-    hourmax.metric(label='Peak Hour', value=max_hour)
-    hourmin.metric(label='Lowest Hour', value=min_hour)
-    
-    # Fill the counts dictionary based on occurrences
-    for index, row in total_weather.iterrows():
-        if row['weathersit'] in counts:
-            counts[row['weathersit']] = row['count']
-    
-    # Display the metrics in the respective columns
-    clear.metric(label='Clear/Cloudy', value=counts['Clear/Cloudy'])
-    mist.metric(label='Mist', value=counts['Mist'])
-    light.metric(label='Light Rain/Snow', value=counts['Light Rain/Snow'])
-    heavy.metric(label='Heavy Rain/Snow', value=counts['Heavy Rain/Snow'])
+# Bar Plot Casual dan Registered Berdasarkan Season
+st.subheader("Visualisasi Total Penyewa Berdasarkan Season (Casual dan Registered)")
 
-    st.subheader('Working Day')
-    working_day = hour_data[(hour_data['yr'] == (year_option - 2011)) & (hour_data['season'] == season_option) & (hour_data['hr'] == day_option)].groupby('workingday')['cnt'].mean().reset_index()
-    # Create a pie/donut chart using Altairx
-    chart = alt.Chart(working_day).mark_arc(innerRadius=50).encode(
-        color=alt.Color(field='workingday', type='nominal', title='Working Day'),
-        theta=alt.Theta(field='cnt', type='quantitative', title='Average Bikes Shared'),
-        tooltip=['cnt', 'workingday']
-    ).properties(
-        title='Working Day Comparison'
-    )
+# Reshape the data to have one column for casual and one for registered, grouped by season
+season_group_melted = season_group.melt(id_vars="season", value_vars=["casual", "registered"], 
+                                        var_name="Penyewa", value_name="Jumlah")
 
-    # Display the chart in Streamlit
-    st.altair_chart(chart, use_container_width=True)
+plt.figure(figsize=(10, 6))
+sns.barplot(x='season', y='Jumlah', hue='Penyewa', data=season_group_melted)
+plt.title("Total Penyewa Berdasarkan Season (Casual dan Registered)")
+plt.xlabel("Season")
+plt.ylabel("Total Penyewa")
+st.pyplot(plt)
+
+# Plot Daily Orders
+st.subheader("Daily Orders Plot")
+plt.figure(figsize=(10, 6))
+sns.lineplot(x=filtered_data['dteday'], y=filtered_data['cnt'], hue=filtered_data['season'])
+plt.title("Total Orders per Day by Season")
+plt.xlabel("Tanggal")
+plt.ylabel("Total Penyewa")
+st.pyplot(plt)
+
+# Penyewa Berdasarkan Casual dan Registered
+st.subheader("Penyewa Berdasarkan Casual dan Registered")
+casual_registered_group = penyewa_grouped_by_casual_registered(filtered_data)
+st.dataframe(casual_registered_group)
+
+# Scatter Plot Casual dan Registered
+st.subheader("Visualisasi Penyewa Berdasarkan Casual dan Registered (Scatter Plot)")
+plt.figure(figsize=(10, 6))
+sns.scatterplot(x='casual', y='registered', data=casual_registered_group)
+plt.title("Scatter Plot Casual vs Registered")
+plt.xlabel("Casual")
+plt.ylabel("Registered")
+st.pyplot(plt)
+
+st.subheader("Visualisasi Total Penyewa Berdasarkan Casual dan Registered (Bar Plot)")
+casual_registered_total = casual_registered_group[['casual', 'registered']].sum().reset_index()
+
+plt.figure(figsize=(10, 6))
+sns.barplot(x='index', y=0, data=casual_registered_total)
+plt.title("Bar Plot Total Casual dan Registered")
+plt.xlabel("Kategori")
+plt.ylabel("Jumlah Penyewa")
+st.pyplot(plt)
+
+
+# Penyewa Casual berdasarkan Weekday, Workingday, & Holiday
+st.subheader("Penyewa Casual Berdasarkan Weekday, Workingday, & Holiday")
+wday_workday_holiday_group = penyewa_by_wday_workday_holiday(filtered_data)
+casual_group = wday_workday_holiday_group[['weekday', 'workingday', 'holiday', 'casual']]
+st.dataframe(casual_group)
+
+# Bar Plot Penyewa Casual Berdasarkan Weekday, Workingday, & Holiday
+st.subheader("Visualisasi Penyewa Casual Berdasarkan Weekday, Workingday, & Holiday")
+plt.figure(figsize=(10, 6))
+sns.barplot(x='weekday', y='casual', hue='workingday', data=casual_group)
+plt.title("Penyewa Casual Berdasarkan Weekday dan Workingday")
+plt.xlabel("Weekday")
+plt.ylabel("Total Penyewa Casual")
+st.pyplot(plt)
+
+# Penyewa Registered berdasarkan Weekday, Workingday, & Holiday
+st.subheader("Penyewa Registered Berdasarkan Weekday, Workingday, & Holiday")
+registered_group = wday_workday_holiday_group[['weekday', 'workingday', 'holiday', 'registered']]
+st.dataframe(registered_group)
+
+# Bar Plot Penyewa Registered Berdasarkan Weekday, Workingday, & Holiday
+st.subheader("Visualisasi Penyewa Registered Berdasarkan Weekday, Workingday, & Holiday")
+plt.figure(figsize=(10, 6))
+sns.barplot(x='weekday', y='registered', hue='workingday', data=registered_group)
+plt.title("Penyewa Registered Berdasarkan Weekday dan Workingday")
+plt.xlabel("Weekday")
+plt.ylabel("Total Penyewa Registered")
+st.pyplot(plt)
+
+# Exploratory Lanjutan: Clustering Penyewa Casual dan Registered Berdasarkan Season
+st.subheader("Clustering Penyewa Casual dan Registered Berdasarkan Season")
+season_data = filtered_data[['season', 'casual', 'registered']]
+kmeans = KMeans(n_clusters=3)
+season_data['cluster'] = kmeans.fit_predict(season_data[['casual', 'registered']])
+
+# Plot clustering
+plt.figure(figsize=(10, 6))
+sns.scatterplot(x='casual', y='registered', hue='cluster', data=season_data, palette='viridis')
+plt.title("Clustering Casual & Registered")
+plt.xlabel("Casual")
+plt.ylabel("Registered")
+st.pyplot(plt)
+
+# Exploratory Lanjutan: Penyewa Berdasarkan Weekday, Workingday, & Holiday
+st.subheader("Clustering Berdasarkan Weekday, Workingday, & Holiday")
+weekday_data = filtered_data[['weekday', 'workingday', 'holiday', 'casual', 'registered']]
+kmeans_weekday = KMeans(n_clusters=3)
+weekday_data['cluster'] = kmeans_weekday.fit_predict(weekday_data[['casual', 'registered']])
+
+# Plot clustering weekday
+plt.figure(figsize=(10, 6))
+sns.scatterplot(x='casual', y='registered', hue='cluster', data=weekday_data, palette='coolwarm')
+plt.title("Clustering Berdasarkan Weekday, Workingday, & Holiday")
+plt.xlabel("Casual")
+plt.ylabel("Registered")
+st.pyplot(plt)
