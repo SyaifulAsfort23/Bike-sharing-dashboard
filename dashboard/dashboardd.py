@@ -22,9 +22,9 @@ print("Files in current directory:", os.listdir())
 # Helper function: Load data
 @st.cache_data
 def load_data():
-    data = pd.read_csv('/dashboard/fixed_day.csv')
+    data = pd.read_csv('fixed_day.csv')
     try:
-        data = pd.read_csv('fixed_day.csv')
+        data = pd.read_csv('dashboar/fixed_day.csv')
         print("File successfully loaded!")
     except FileNotFoundError:
         print("File not found.")
