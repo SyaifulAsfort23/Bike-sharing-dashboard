@@ -17,6 +17,10 @@ st.set_page_config(
 @st.cache_data
 def load_data():
     data = pd.read_csv('fixed_day.csv')
+    if os.path.exists('fixed_day.csv'):
+        data = pd.read_csv('fixed_day.csv')
+    else:
+        st.error("File 'fixed_day.csv' not found. Please upload the file or check the path.")
     data['dteday'] = pd.to_datetime(data['dteday'], format='mixed')  # Mixed format handling
     return data
 
