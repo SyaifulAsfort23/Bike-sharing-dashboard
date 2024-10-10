@@ -16,7 +16,7 @@ st.set_page_config(
 # Helper function: Load data
 @st.cache_data
 def load_data():
-    data = pd.read_csv('dashboard/fixed_day.csv')
+    data = pd.read_csv('fixed_day.csv')
     data['dteday'] = pd.to_datetime(data['dteday'], format='mixed')  # Mixed format handling
     return data
 
