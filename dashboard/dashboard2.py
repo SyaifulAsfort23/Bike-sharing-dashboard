@@ -122,7 +122,6 @@ plt.xlabel("Kategori")
 plt.ylabel("Jumlah Penyewa")
 st.pyplot(plt)
 
-##################################################
 
 # Membuat group data
 wday_workday_holiday_group = penyewa_by_wday_workday_holiday(filtered_data)
