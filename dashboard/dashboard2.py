@@ -25,12 +25,32 @@ def penyewa_by_wday_workday_holiday(data):
 def penyewa_grouped_by_casual_registered(data):
     return data[['casual', 'registered', 'cnt']].groupby(['casual', 'registered']).sum().reset_index()
 
+# Membuat DataFrame Penyewa Berdasarkan Season
+def penyewa_by_season(data):
+    return data.groupby('season').agg({
+        'casual': 'sum',
+        'registered': 'sum',
+        'cnt': 'sum'
+    }).reset_index()
+
+
 # Load the data
 data = load_data()
+
+filtered_data = filter_data_by_date(data)
+
+
+# Total Penyewa berdasarkan Season
+st.subheader("Total Penyewa Berdasarkan Season")
+season_group = penyewa_by_season(filtered_data)
+st.dataframe(season_group)
+
 
 
 # Changes Season format
 data['season'] = data['season'].replace({1: 'Winter', 2: 'Spring', 3: 'Summer', 4: 'Fall'})
+
+
 
 # Sidebar for date filtering
 st.sidebar.title("Filter Rentang Tanggal")
@@ -42,16 +62,21 @@ filtered_data = data[(data['dteday'] >= pd.to_datetime(start_date)) & (data['dte
 # Dashboard Section
 st.title("Dashboard Penyewa Berdasarkan Musim dan Hari")
 
-# Total Penyewa berdasarkan Season
-st.subheader("Total Penyewa Berdasarkan Season")
-season_group = penyewa_by_season(filtered_data)
-st.dataframe(season_group)
 
-# Bar Plot Total Penyewa per Season
-st.subheader("Visualisasi Total Penyewa Berdasarkan Season")
+# Bar Plot yang Dibagi Berdasarkan Casual dan Registered
+st.subheader("Visualisasi Total Penyewa Berdasarkan Season (Casual dan Registered)")
+
+
+# Bar Plot Casual dan Registered Berdasarkan Season
+st.subheader("Visualisasi Total Penyewa Berdasarkan Season (Casual dan Registered)")
+
+# Reshape the data to have one column for casual and one for registered, grouped by season
+season_group_melted = season_group.melt(id_vars="season", value_vars=["casual", "registered"], 
+                                        var_name="Penyewa", value_name="Jumlah")
+
 plt.figure(figsize=(10, 6))
-sns.barplot(x='season', y='cnt', data=season_group)
-plt.title("Total Penyewa per Season")
+sns.barplot(x='season', y='Jumlah', hue='Penyewa', data=season_group_melted)
+plt.title("Total Penyewa Berdasarkan Season (Casual dan Registered)")
 plt.xlabel("Season")
 plt.ylabel("Total Penyewa")
 st.pyplot(plt)
