@@ -1,4 +1,3 @@
-# dashboard.py
 import os
 import streamlit as st
 import pandas as pd
@@ -6,23 +5,20 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.cluster import KMeans
 
-
 st.set_page_config(
     page_title='Bike Sharing Dashboard',
     layout='centered'
 )
 
-import os
-import pandas as pd
-
 print("Current working directory:", os.getcwd())
 print("Files in current directory:", os.listdir())
-
 
 # Helper function: Load data
 @st.cache_data
 def load_data():
     data = pd.read_csv('dashboard/fixed_day.csv')
+    data['dteday'] = pd.to_datetime(data['dteday'], format='%Y-%m-%d')  # Ensure correct date parsing
+    return data  # Return the DataFrame
 
 # Helper function: Group by season
 def penyewa_by_season(data):
@@ -36,27 +32,8 @@ def penyewa_by_wday_workday_holiday(data):
 def penyewa_grouped_by_casual_registered(data):
     return data[['casual', 'registered', 'cnt']].groupby(['casual', 'registered']).sum().reset_index()
 
-# Membuat DataFrame Penyewa Berdasarkan Season
-def penyewa_by_season(data):
-    return data.groupby('season').agg({
-        'casual': 'sum',
-        'registered': 'sum',
-        'cnt': 'sum'
-    }).reset_index()
-
-# Fungsi untuk mengelompokkan data penyewa berdasarkan weekday, workingday, holiday
-def penyewa_by_wday_workday_holiday(data):
-    return data.groupby(['weekday', 'workingday', 'holiday']).agg({
-        'casual': 'sum',
-        'registered': 'sum',
-        'cnt': 'sum'
-    }).reset_index()
-
-
 # Load the data
-
 data = load_data()
-
 
 # Sidebar for date filtering
 st.sidebar.title("Filter Rentang Tanggal")
@@ -73,13 +50,8 @@ st.subheader("Total Penyewa Berdasarkan Season")
 season_group = penyewa_by_season(filtered_data)
 st.dataframe(season_group)
 
-
-
 # Bar Plot yang Dibagi Berdasarkan Casual dan Registered
 st.subheader("Visualisasi Total Penyewa Berdasarkan Season (Casual dan Registered)")
-
-
-# Reshape the data to have one column for casual and one for registered, grouped by season
 season_group_melted = season_group.melt(id_vars="season", value_vars=["casual", "registered"], 
                                         var_name="Penyewa", value_name="Jumlah")
 
@@ -122,7 +94,6 @@ plt.title("Bar Plot Total Casual dan Registered")
 plt.xlabel("Kategori")
 plt.ylabel("Jumlah Penyewa")
 st.pyplot(plt)
-
 
 # Membuat group data
 wday_workday_holiday_group = penyewa_by_wday_workday_holiday(filtered_data)
@@ -168,8 +139,6 @@ with col3:
 
 # Bar plot dengan 3 kategori sekaligus (Workingday, Weekday, Holiday)
 st.subheader("Visualisasi Penyewa Casual Berdasarkan Weekday, Workingday, & Holiday")
-
-# Reshape data untuk visualisasi
 casual_group_melted = wday_workday_holiday_group.melt(
     id_vars="weekday", value_vars=["workingday", "holiday"],
     var_name="Kategori", value_name="Jumlah Casual"
@@ -181,7 +150,6 @@ plt.title("Penyewa Casual Berdasarkan Weekday, Workingday, & Holiday")
 plt.xlabel("Weekday")
 plt.ylabel("Total Penyewa Casual")
 st.pyplot(plt)
-
 
 # Penyewa Casual berdasarkan Weekday, Workingday, & Holiday
 st.subheader("Penyewa Casual Berdasarkan Weekday, Workingday, & Holiday")
@@ -214,28 +182,28 @@ st.pyplot(plt)
 
 # Exploratory Lanjutan: Clustering Penyewa Casual dan Registered Berdasarkan Season
 st.subheader("Clustering Penyewa Casual dan Registered Berdasarkan Season")
-season_data = filtered_data[['season', 'casual', 'registered']]
-kmeans = KMeans(n_clusters=3)
-season_data['cluster'] = kmeans.fit_predict(season_data[['casual', 'registered']])
 
-# Plot clustering
+# Drop rows with NaN values
+filtered_data = filtered_data.dropna()
+
+# Prepare data for clustering
+cluster_data = filtered_data[['casual', 'registered']]
+kmeans = KMeans(n_clusters=3)  # Adjust the number of clusters as necessary
+cluster_labels = kmeans.fit_predict(cluster_data)
+
+# Add cluster labels to the data
+filtered_data['cluster'] = cluster_labels
+
+# Plot the clusters
 plt.figure(figsize=(10, 6))
-sns.scatterplot(x='casual', y='registered', hue='cluster', data=season_data, palette='viridis')
-plt.title("Clustering Casual & Registered")
+sns.scatterplot(x='casual', y='registered', hue='cluster', data=filtered_data, palette='deep')
+plt.title("Clustering Penyewa Casual dan Registered")
 plt.xlabel("Casual")
 plt.ylabel("Registered")
 st.pyplot(plt)
 
-# Exploratory Lanjutan: Penyewa Berdasarkan Weekday, Workingday, & Holiday
-st.subheader("Clustering Berdasarkan Weekday, Workingday, & Holiday")
-weekday_data = filtered_data[['weekday', 'workingday', 'holiday', 'casual', 'registered']]
-kmeans_weekday = KMeans(n_clusters=3)
-weekday_data['cluster'] = kmeans_weekday.fit_predict(weekday_data[['casual', 'registered']])
+# Keterangan tentang Clustering
+st.write("Clustering menggunakan KMeans untuk membedakan pola penyewa casual dan registered berdasarkan season.")
 
-# Plot clustering weekday
-plt.figure(figsize=(10, 6))
-sns.scatterplot(x='casual', y='registered', hue='cluster', data=weekday_data, palette='coolwarm')
-plt.title("Clustering Berdasarkan Weekday, Workingday, & Holiday")
-plt.xlabel("Casual")
-plt.ylabel("Registered")
-st.pyplot(plt)
+# Footer
+st.sidebar.markdown("Developed by [SYAIFUL]")
