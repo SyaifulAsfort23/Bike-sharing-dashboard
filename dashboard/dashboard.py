@@ -1,6 +1,9 @@
 import streamlit as st
 import pandas as pd
 import altair as alt
+import seaborn as sns
+import matplotlib.pyplot as plt
+
 
 day_shape = 'fixed_day.csv'
 hour_shape = 'hour.csv'
@@ -51,7 +54,45 @@ col1, col2, col3 = st.columns((2, 2, 3), gap='medium')
 
 # Column 1: Pengaruh Musim terhadap Penyewaan Sepeda
 with col1:
+    
     st.subheader('Pengaruh Musim terhadap Penyewaan Sepeda')
+
+    # 1. Jumlah Penyewa Berdasarkan Holiday dan Season
+    holiday_season_counts = daily_data.groupby(['holiday', 'season'])['cnt'].sum().reset_index()
+    # Mengubah kode holiday menjadi deskripsi
+    holiday_season_counts['holiday'] = holiday_season_counts['holiday'].map({0: 'No Holiday', 1: 'Holiday'})
+
+    # Visualisasi Jumlah Penyewa Berdasarkan Holiday dan Season
+    fig1, ax1 = plt.subplots(figsize=(10, 6))
+    sns.barplot(data=holiday_season_counts, x='season', y='cnt', hue='holiday',ax=ax1)
+    ax1.set_title('Jumlah Penyewa Berdasarkan Holiday dan Season')
+    ax1.set_xlabel('Musim')
+    ax1.set_ylabel('Jumlah Penyewa')
+    ax1.set_xticks([0, 1, 2, 3])
+    ax1.set_xticklabels(['Spring', 'Summer', 'Fall', 'Winter'])
+    ax1.legend(title='Hari Libur')
+    st.pyplot(fig1)
+
+
+    # 1. Jumlah Penyewa Berdasarkan Holiday dan Season
+    weekday_season_counts = daily_data.groupby(['weekday', 'season'])['cnt'].sum().reset_index()
+
+    # Visualisasi Jumlah Penyewa Berdasarkan Holiday dan Season
+    fig2, ax2 = plt.subplots(figsize=(10, 6))
+    sns.barplot(data=weekday_season_counts, x='season', y='cnt', hue='weekday',ax=ax1)
+    ax2.set_title('Jumlah Penyewa Berdasarkan Weekday dan Season')
+    ax2.set_xlabel('Musim')
+    ax2.set_ylabel('Jumlah Penyewa')
+    ax2.set_xticks([0, 1, 2, 3])
+    ax2.set_xticklabels(['Spring', 'Summer', 'Fall', 'Winter'])
+    ax2.legend(title='Weekday')
+    st.pyplot(fig2)
+
+
+
+
+
+
     
     # Data pengaruh musim terhadap penyewaan sepeda
     seasonal_rentals = daily_data[daily_data['yr'] == (year_option - 2011)].groupby('season')['cnt'].mean().reset_index()
