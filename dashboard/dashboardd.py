@@ -23,7 +23,6 @@ def load_data():
 # Helper function: Group by season
 def penyewa_by_season(data):
     return data.groupby('season')[['casual', 'registered', 'cnt']].sum().reset_index()
-https://humble-couscous-4j75x6v5xwg527vqg.github.dev/
 # Helper function: Group by weekday, workingday, holiday in each season
 def penyewa_by_wday_workday_holiday(data):
     return data.groupby(['season', 'weekday', 'workingday', 'holiday'])[['casual', 'registered', 'cnt']].sum().reset_index()
