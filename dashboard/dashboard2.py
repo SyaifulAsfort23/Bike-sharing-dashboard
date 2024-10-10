@@ -6,6 +6,13 @@ import matplotlib.pyplot as plt
 import seaborn as sns
 from sklearn.cluster import KMeans
 
+
+st.set_page_config(
+    page_title='Bike Sharing Dashboard',
+    layout='centered'
+)
+
+
 # Helper function: Load data
 @st.cache_data
 def load_data():
@@ -28,6 +35,14 @@ def penyewa_grouped_by_casual_registered(data):
 # Membuat DataFrame Penyewa Berdasarkan Season
 def penyewa_by_season(data):
     return data.groupby('season').agg({
+        'casual': 'sum',
+        'registered': 'sum',
+        'cnt': 'sum'
+    }).reset_index()
+
+# Fungsi untuk mengelompokkan data penyewa berdasarkan weekday, workingday, holiday
+def penyewa_by_wday_workday_holiday(data):
+    return data.groupby(['weekday', 'workingday', 'holiday']).agg({
         'casual': 'sum',
         'registered': 'sum',
         'cnt': 'sum'
@@ -62,9 +77,6 @@ st.title("Dashboard Penyewa Berdasarkan Musim dan Hari")
 # Bar Plot yang Dibagi Berdasarkan Casual dan Registered
 st.subheader("Visualisasi Total Penyewa Berdasarkan Season (Casual dan Registered)")
 
-
-# Bar Plot Casual dan Registered Berdasarkan Season
-st.subheader("Visualisasi Total Penyewa Berdasarkan Season (Casual dan Registered)")
 
 # Reshape the data to have one column for casual and one for registered, grouped by season
 season_group_melted = season_group.melt(id_vars="season", value_vars=["casual", "registered"], 
@@ -108,6 +120,66 @@ sns.barplot(x='index', y=0, data=casual_registered_total)
 plt.title("Bar Plot Total Casual dan Registered")
 plt.xlabel("Kategori")
 plt.ylabel("Jumlah Penyewa")
+st.pyplot(plt)
+
+##################################################
+
+# Membuat group data
+wday_workday_holiday_group = penyewa_by_wday_workday_holiday(filtered_data)
+
+# Membagi visualisasi ke dalam 3 kolom
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    st.subheader("Penyewa Casual Berdasarkan Workingday")
+    workingday_group = wday_workday_holiday_group.groupby('workingday').agg({
+        'casual': 'sum'
+    }).reset_index()
+    st.dataframe(workingday_group)
+    # Bar plot untuk workingday
+    plt.figure(figsize=(5, 4))
+    sns.barplot(x='workingday', y='casual', data=workingday_group)
+    plt.title("Penyewa Casual Berdasarkan Workingday")
+    st.pyplot(plt)
+
+with col2:
+    st.subheader("Penyewa Casual Berdasarkan Weekday")
+    weekday_group = wday_workday_holiday_group.groupby('weekday').agg({
+        'casual': 'sum'
+    }).reset_index()
+    st.dataframe(weekday_group)
+    # Bar plot untuk weekday
+    plt.figure(figsize=(5, 4))
+    sns.barplot(x='weekday', y='casual', data=weekday_group)
+    plt.title("Penyewa Casual Berdasarkan Weekday")
+    st.pyplot(plt)
+
+with col3:
+    st.subheader("Penyewa Casual Berdasarkan Holiday")
+    holiday_group = wday_workday_holiday_group.groupby('holiday').agg({
+        'casual': 'sum'
+    }).reset_index()
+    st.dataframe(holiday_group)
+    # Bar plot untuk holiday
+    plt.figure(figsize=(5, 4))
+    sns.barplot(x='holiday', y='casual', data=holiday_group)
+    plt.title("Penyewa Casual Berdasarkan Holiday")
+    st.pyplot(plt)
+
+# Bar plot dengan 3 kategori sekaligus (Workingday, Weekday, Holiday)
+st.subheader("Visualisasi Penyewa Casual Berdasarkan Weekday, Workingday, & Holiday")
+
+# Reshape data untuk visualisasi
+casual_group_melted = wday_workday_holiday_group.melt(
+    id_vars="weekday", value_vars=["workingday", "holiday"],
+    var_name="Kategori", value_name="Jumlah Casual"
+)
+
+plt.figure(figsize=(10, 6))
+sns.barplot(x='weekday', y='Jumlah Casual', hue='Kategori', data=casual_group_melted)
+plt.title("Penyewa Casual Berdasarkan Weekday, Workingday, & Holiday")
+plt.xlabel("Weekday")
+plt.ylabel("Total Penyewa Casual")
 st.pyplot(plt)
 
 
