@@ -28,6 +28,10 @@ def penyewa_grouped_by_casual_registered(data):
 # Load the data
 data = load_data()
 
+
+# Changes Season format
+data['season'] = data['season'].replace({1: 'Winter', 2: 'Spring', 3: 'Summer', 4: 'Fall'})
+
 # Sidebar for date filtering
 st.sidebar.title("Filter Rentang Tanggal")
 start_date = st.sidebar.date_input('Start date', data['dteday'].min())
@@ -66,14 +70,25 @@ st.subheader("Penyewa Berdasarkan Casual dan Registered")
 casual_registered_group = penyewa_grouped_by_casual_registered(filtered_data)
 st.dataframe(casual_registered_group)
 
-# Heatmap Casual dan Registered
-st.subheader("Visualisasi Penyewa Berdasarkan Casual dan Registered")
+# Scatter Plot Casual dan Registered
+st.subheader("Visualisasi Penyewa Berdasarkan Casual dan Registered (Scatter Plot)")
 plt.figure(figsize=(10, 6))
-sns.heatmap(casual_registered_group.pivot("casual", "registered", "cnt"), cmap='coolwarm', annot=True)
-plt.title("Heatmap Casual vs Registered")
-plt.xlabel("Registered")
-plt.ylabel("Casual")
+sns.scatterplot(x='casual', y='registered', data=casual_registered_group)
+plt.title("Scatter Plot Casual vs Registered")
+plt.xlabel("Casual")
+plt.ylabel("Registered")
 st.pyplot(plt)
+
+st.subheader("Visualisasi Total Penyewa Berdasarkan Casual dan Registered (Bar Plot)")
+casual_registered_total = casual_registered_group[['casual', 'registered']].sum().reset_index()
+
+plt.figure(figsize=(10, 6))
+sns.barplot(x='index', y=0, data=casual_registered_total)
+plt.title("Bar Plot Total Casual dan Registered")
+plt.xlabel("Kategori")
+plt.ylabel("Jumlah Penyewa")
+st.pyplot(plt)
+
 
 # Penyewa Casual berdasarkan Weekday, Workingday, & Holiday
 st.subheader("Penyewa Casual Berdasarkan Weekday, Workingday, & Holiday")
